@@ -14,7 +14,7 @@ describe("chatModel", () => {
   it("returns the Gemini model by default", async () => {
     const { chatModel } = await import("@/lib/ai/provider");
     const model = chatModel() as unknown as { modelId: string };
-    expect(model.modelId).toBe("gemini-2.5-flash");
+    expect(model.modelId).toBe("gemini-3.5-flash");
   });
 
   it("returns the Groq model when asked", async () => {

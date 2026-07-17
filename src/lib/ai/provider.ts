@@ -6,7 +6,7 @@ import { env } from "@/lib/env";
 export type ProviderName = "google" | "groq";
 
 export const CHAT_MODELS: Record<ProviderName, string> = {
-  google: "gemini-2.5-flash",
+  google: "gemini-3.5-flash",
   groq: "llama-3.3-70b-versatile",
 };
 
