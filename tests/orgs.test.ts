@@ -47,6 +47,12 @@ describe("createOrg", () => {
     expect(org?.name).toBe("Acme Corp");
     expect(org?.widgetConfig.position).toBe("bottom-right");
     expect(org?.emailConfig.mode).toBe("draft");
+    expect(org?.widgetConfig.primaryColor).toBe("#4f46e5");
+    expect(org?.widgetConfig.greeting).toBe("Hi! How can we help?");
+    expect(org?.emailConfig.supportAddress).toBeNull();
+    expect(org?.aiConfig.tone).toBe("friendly and concise");
+    expect(org?.aiConfig.escalationRules).toBe("");
+    expect(org?.aiConfig.provider).toBeNull();
 
     const membership = await db.collection("memberships").findOne({ userId, orgId });
     expect(membership?.role).toBe("owner");

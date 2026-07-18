@@ -1,4 +1,5 @@
 import { ObjectId, type Db } from "mongodb";
+import type { Membership, Organization } from "./db/types";
 import { createSiteKey } from "./siteKeys";
 
 export function slugify(name: string): string {
@@ -31,8 +32,10 @@ export async function createOrg(
 ): Promise<CreateOrgResult> {
   const slug = await uniqueSlug(db, slugify(opts.name));
   const now = new Date();
+  const orgId = new ObjectId();
 
-  const { insertedId: orgId } = await db.collection("organizations").insertOne({
+  await db.collection<Organization>("organizations").insertOne({
+    _id: orgId,
     name: opts.name,
     slug,
     widgetConfig: {
@@ -45,7 +48,8 @@ export async function createOrg(
     createdAt: now,
   });
 
-  await db.collection("memberships").insertOne({
+  await db.collection<Membership>("memberships").insertOne({
+    _id: new ObjectId(),
     userId: opts.userId,
     orgId,
     role: "owner",
