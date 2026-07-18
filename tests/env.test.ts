@@ -12,19 +12,19 @@ const valid = {
 
 describe("loadEnv", () => {
   it("throws naming every missing variable", () => {
-    expect(() => loadEnv({} as NodeJS.ProcessEnv)).toThrowError(/MONGODB_URI/);
-    expect(() => loadEnv({} as NodeJS.ProcessEnv)).toThrowError(/AUTH_SECRET/);
+    expect(() => loadEnv({} as unknown as NodeJS.ProcessEnv)).toThrowError(/MONGODB_URI/);
+    expect(() => loadEnv({} as unknown as NodeJS.ProcessEnv)).toThrowError(/AUTH_SECRET/);
   });
 
   it("applies defaults for LLM_PROVIDER and APP_URL", () => {
-    const env = loadEnv(valid as NodeJS.ProcessEnv);
+    const env = loadEnv(valid as unknown as NodeJS.ProcessEnv);
     expect(env.LLM_PROVIDER).toBe("google");
     expect(env.APP_URL).toBe("http://localhost:3000");
   });
 
   it("rejects an unknown LLM_PROVIDER", () => {
     expect(() =>
-      loadEnv({ ...valid, LLM_PROVIDER: "openai" } as NodeJS.ProcessEnv),
+      loadEnv({ ...valid, LLM_PROVIDER: "openai" } as unknown as NodeJS.ProcessEnv),
     ).toThrowError(/LLM_PROVIDER/);
   });
 });
