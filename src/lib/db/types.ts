@@ -32,14 +32,23 @@ export interface Membership {
   createdAt: Date;
 }
 
+export type SourceConfig =
+  | { kind: "file"; blobUrl: string; filename: string; contentType: string }
+  | { kind: "crawl"; rootUrl: string; maxPages: number; maxDepth: number }
+  | { kind: "ticket-import"; blobUrl: string; filename: string; format: "csv" | "mbox" };
+
 export interface Source {
   _id: ObjectId;
   orgId: ObjectId;
   type: "file" | "url" | "crawl" | "ticket-import";
   name: string;
   status: "pending" | "processing" | "ready" | "error";
+  config: SourceConfig;
+  lastRunId: string | null; // Trigger.dev run id of the latest ingestion run
+  errorMessage: string | null;
+  chunkCount: number;
   lastSyncedAt: Date | null;
-  crawlSchedule: string | null; // cron expression, crawl sources only
+  crawlSchedule: "daily" | "weekly" | null; // crawl sources only
   createdAt: Date;
 }
 

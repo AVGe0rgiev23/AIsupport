@@ -67,6 +67,15 @@ export function withOrg(db: Db, orgId: ObjectId) {
         .insertOne({ ...(doc as Document), orgId });
     },
 
+    insertMany<K extends OrgScopedName>(
+      name: K,
+      docs: Omit<OrgScoped[K], "_id" | "orgId">[],
+    ) {
+      return db
+        .collection(name)
+        .insertMany(docs.map((doc) => ({ ...(doc as Document), orgId })));
+    },
+
     updateOne<K extends OrgScopedName>(
       name: K,
       filter: Filter<OrgScoped[K]>,
