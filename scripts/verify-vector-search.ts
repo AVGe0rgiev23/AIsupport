@@ -19,13 +19,12 @@ async function main() {
   const orgB = new ObjectId();
   const marker = `verify-vector-${Date.now()}`;
 
-  await chunks.insertMany([
-    { orgId: orgA, documentId: new ObjectId(), text: `${marker} orgA refunds`, embedding: basisVector(0), heading: null, position: 0 },
-    { orgId: orgA, documentId: new ObjectId(), text: `${marker} orgA shipping`, embedding: basisVector(1), heading: null, position: 1 },
-    { orgId: orgB, documentId: new ObjectId(), text: `${marker} orgB secret`, embedding: basisVector(0), heading: null, position: 0 },
-  ]);
-
   try {
+    await chunks.insertMany([
+      { orgId: orgA, documentId: new ObjectId(), text: `${marker} orgA refunds`, embedding: basisVector(0), heading: null, position: 0 },
+      { orgId: orgA, documentId: new ObjectId(), text: `${marker} orgA shipping`, embedding: basisVector(1), heading: null, position: 1 },
+      { orgId: orgB, documentId: new ObjectId(), text: `${marker} orgB secret`, embedding: basisVector(0), heading: null, position: 0 },
+    ]);
     // Search indexes build asynchronously — poll until our docs are visible.
     let hits: Awaited<ReturnType<typeof searchChunks>> = [];
     for (let attempt = 0; attempt < 24; attempt++) {
