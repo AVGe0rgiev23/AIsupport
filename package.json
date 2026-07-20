@@ -9,7 +9,8 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "db:indexes": "tsx scripts/ensure-indexes.ts"
+    "db:indexes": "tsx scripts/ensure-indexes.ts",
+    "db:verify-vector": "tsx scripts/verify-vector-search.ts"
   },
   "dependencies": {
     "@ai-sdk/google": "^2.0.82",
