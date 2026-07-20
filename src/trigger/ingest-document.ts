@@ -60,16 +60,11 @@ export const ingestDocument = schemaTask({
 
     metadata.set("phase", "chunking");
     const chunks = chunkText(extracted.text);
-    metadata.set("totalChunks", chunks.length).set("embeddedChunks", 0);
 
     metadata.set("phase", "embedding");
-    const embeddings: number[][] = [];
-    const BATCH = 100;
-    for (let i = 0; i < chunks.length; i += BATCH) {
-      const slice = chunks.slice(i, i + BATCH);
-      embeddings.push(...(await embedTexts(slice.map((c) => c.text))));
-      metadata.set("embeddedChunks", Math.min(i + BATCH, chunks.length));
-    }
+    metadata.set("totalChunks", chunks.length).set("embeddedChunks", 0);
+    const embeddings = await embedTexts(chunks.map((c) => c.text));
+    metadata.set("embeddedChunks", chunks.length);
 
     metadata.set("phase", "saving");
     // Re-ingesting a file source replaces its previous document + chunks.
