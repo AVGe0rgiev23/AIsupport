@@ -8,6 +8,7 @@ const envSchema = z.object({
   RESEND_API_KEY: z.string().min(1, "required"),
   AUTH_SECRET: z.string().min(32, "must be at least 32 characters"),
   TRIGGER_SECRET_KEY: z.string().min(1, "required"),
+  BLOB_READ_WRITE_TOKEN: z.string().min(1, "required"),
   APP_URL: z.string().url().default("http://localhost:3000"),
 });
 

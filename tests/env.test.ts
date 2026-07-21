@@ -8,6 +8,7 @@ const valid = {
   RESEND_API_KEY: "re_test",
   AUTH_SECRET: "0123456789abcdef0123456789abcdef",
   TRIGGER_SECRET_KEY: "tr_dev_test",
+  BLOB_READ_WRITE_TOKEN: "vercel_blob_rw_test",
 };
 
 describe("loadEnv", () => {
@@ -26,5 +27,12 @@ describe("loadEnv", () => {
     expect(() =>
       loadEnv({ ...valid, LLM_PROVIDER: "openai" } as unknown as NodeJS.ProcessEnv),
     ).toThrowError(/LLM_PROVIDER/);
+  });
+
+  it("requires BLOB_READ_WRITE_TOKEN", () => {
+    const { BLOB_READ_WRITE_TOKEN: _omitted, ...rest } = valid;
+    expect(() => loadEnv(rest as unknown as NodeJS.ProcessEnv)).toThrowError(
+      /BLOB_READ_WRITE_TOKEN/,
+    );
   });
 });
