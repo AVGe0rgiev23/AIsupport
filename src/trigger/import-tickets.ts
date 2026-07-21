@@ -43,13 +43,6 @@ export const importTickets = schemaTask({
     if (tickets.length === 0) throw new Error("No tickets could be parsed from the file");
     metadata.set("totalTickets", tickets.length);
 
-    // Re-import replaces this source's previous documents + chunks.
-    const oldDocs = await orgDb.find("documents", { sourceId }).toArray();
-    if (oldDocs.length > 0) {
-      await orgDb.deleteMany("chunks", { documentId: { $in: oldDocs.map((d) => d._id) } });
-      await orgDb.deleteMany("documents", { sourceId });
-    }
-
     // One document per ticket; chunk each; embed everything in one paced pass.
     metadata.set("phase", "embedding");
     const perDoc = tickets.map((t) => {
@@ -61,6 +54,15 @@ export const importTickets = schemaTask({
     metadata.set("totalChunks", allTexts.length).set("embeddedChunks", 0);
     const allEmbeddings = await embedTexts(allTexts);
     metadata.set("embeddedChunks", allTexts.length);
+
+    // Re-import replaces this source's previous documents + chunks. Only do this
+    // after embeddings have succeeded, so a failed run never leaves the source
+    // without any searchable content.
+    const oldDocs = await orgDb.find("documents", { sourceId }).toArray();
+    if (oldDocs.length > 0) {
+      await orgDb.deleteMany("chunks", { documentId: { $in: oldDocs.map((d) => d._id) } });
+      await orgDb.deleteMany("documents", { sourceId });
+    }
 
     metadata.set("phase", "saving");
     await db.collection("documents").insertMany(
