@@ -69,7 +69,15 @@ export const crawlWebsite = schemaTask({
     const origin = new URL(rootUrl).origin;
     let queue: { url: string; depth: number }[];
     const sitemapXml = await fetchPage(`${origin}/sitemap.xml`);
-    const sitemapUrls = sitemapXml ? parseSitemap(sitemapXml).filter((u) => u.startsWith(origin)) : [];
+    const sitemapUrls = sitemapXml
+      ? parseSitemap(sitemapXml).filter((u) => {
+          try {
+            return new URL(u).origin === origin;
+          } catch {
+            return false;
+          }
+        })
+      : [];
     if (sitemapUrls.length > 0) {
       queue = sitemapUrls.slice(0, maxPages).map((u) => ({ url: normalizeUrl(u), depth: 0 }));
     } else {
