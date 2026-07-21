@@ -41,6 +41,9 @@ export default async function DashboardPage() {
     <main className="mx-auto max-w-2xl p-8">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">{activeOrg.name}</h1>
+        <a href="/dashboard/sources" className="text-sm text-indigo-700 underline">
+          Knowledge sources
+        </a>
         <form
           action={async () => {
             "use server";
