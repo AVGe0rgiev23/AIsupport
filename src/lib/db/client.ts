@@ -10,7 +10,15 @@ export function getClientPromise(): Promise<MongoClient> {
   if (!globalThis._mongoClientPromise) {
     const uri = process.env.MONGODB_URI;
     if (!uri) throw new Error("MONGODB_URI is not set");
-    globalThis._mongoClientPromise = new MongoClient(uri).connect();
+    const promise = new MongoClient(uri).connect();
+    // A failed connect() must not poison this warm serverless instance forever:
+    // clear the cache on rejection so the next call gets a fresh attempt.
+    promise.catch(() => {
+      if (globalThis._mongoClientPromise === promise) {
+        globalThis._mongoClientPromise = undefined;
+      }
+    });
+    globalThis._mongoClientPromise = promise;
   }
   return globalThis._mongoClientPromise;
 }

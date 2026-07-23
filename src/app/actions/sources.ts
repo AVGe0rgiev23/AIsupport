@@ -9,6 +9,7 @@ import { auth } from "@/auth";
 import type { Source, SourceConfig } from "@/lib/db/types";
 import { getDb } from "@/lib/db/client";
 import { withOrg, type OrgDb } from "@/lib/db/withOrg";
+import { env } from "@/lib/env";
 import type { crawlWebsite } from "@/trigger/crawl-website";
 import type { ingestDocument } from "@/trigger/ingest-document";
 import type { importTickets } from "@/trigger/import-tickets";
@@ -89,6 +90,7 @@ export async function createFileSourceAction(
 
   const blob = await put(`sources/${orgId.toString()}/${crypto.randomUUID()}-${file.name}`, file, {
     access: "public",
+    token: env().BLOB_READ_WRITE_TOKEN,
   });
   await insertAndTrigger(orgDb, orgId, {
     type: "file",
@@ -138,6 +140,7 @@ export async function createTicketImportSourceAction(
 
   const blob = await put(`sources/${orgId.toString()}/${crypto.randomUUID()}-${file.name}`, file, {
     access: "public",
+    token: env().BLOB_READ_WRITE_TOKEN,
   });
   await insertAndTrigger(orgDb, orgId, {
     type: "ticket-import",
@@ -172,7 +175,7 @@ export async function deleteSourceAction(formData: FormData): Promise<void> {
     await orgDb.deleteMany("documents", { sourceId });
   }
   if (source.config.kind === "file" || source.config.kind === "ticket-import") {
-    await del(source.config.blobUrl).catch(() => {}); // blob may already be gone
+    await del(source.config.blobUrl, { token: env().BLOB_READ_WRITE_TOKEN }).catch(() => {}); // blob may already be gone
   }
   await orgDb.deleteMany("sources", { _id: sourceId });
   revalidatePath("/dashboard/sources");

@@ -16,7 +16,7 @@
     "@ai-sdk/google": "^2.0.82",
     "@ai-sdk/groq": "^2.0.45",
     "@auth/mongodb-adapter": "^3.11.2",
-    "@trigger.dev/react-hooks": "^4.5.5",
+    "@trigger.dev/react-hooks": "4.5.4",
     "@trigger.dev/sdk": "4.5.4",
     "@vercel/blob": "^2.6.1",
     "ai": "^5.0.216",
