@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run typecheck && vitest run",
     "test:watch": "vitest",
     "db:indexes": "tsx scripts/ensure-indexes.ts",
     "db:verify-vector": "tsx scripts/verify-vector-search.ts"
