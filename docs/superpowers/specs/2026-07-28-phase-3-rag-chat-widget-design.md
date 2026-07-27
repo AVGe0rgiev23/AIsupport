@@ -29,8 +29,10 @@ No other schema changes. `Conversation`, `Ticket`, `ApiKey`, `LlmUsage` are used
 
 `POST /api/chat` — public, site-key-authenticated (no session):
 
-1. Body: `{siteKey, widgetOrigin, conversationId | null, message}`.
-2. `verifySiteKey(db, siteKey, widgetOrigin)` — rejects unknown key or disallowed origin.
+> **Superseded in part by §5.** The `{siteKey, widgetOrigin}` body and the in-route `verifySiteKey` call described in steps 1–2 were replaced by the signed-widget-token design once the origin-spoofing issue was found. §5 is authoritative for auth; steps 3–8 below are unchanged.
+
+1. Body: `{widgetToken, conversationId | null, message}`.
+2. `verifyWidgetToken(widgetToken)` — validates the HMAC signature and expiry, yielding the `orgId` and `verifiedOrigin` that `/widget` already checked against `allowedDomains` server-side at page-load time.
 3. Load or create the `Conversation` (by `conversationId`, or new if null); insert the user `Message`. This happens **before** the rate check so a `conversationId` always exists for a `Ticket` to attach to, even when the cap blocks the call below.
 4. Rate check: sum today's `llmUsage.requests` for the org **across both providers combined** (one shared daily pool — see §4). If ≥ `WIDGET_DAILY_MSG_CAP` (default 200), skip straight to the escalation marker (§4) — never attempt a call over budget.
 5. `embedQuery(message)` → `searchChunks(db, orgId, vector, k=8)`.
