@@ -101,6 +101,7 @@ export interface Conversation {
 
 export interface Message {
   _id: ObjectId;
+  orgId: ObjectId;
   conversationId: ObjectId;
   role: "user" | "assistant" | "system";
   content: string;

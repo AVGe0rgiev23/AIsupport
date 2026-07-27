@@ -13,6 +13,7 @@ import type {
   KbArticle,
   KbDocument,
   LlmUsage,
+  Message,
   Source,
   Ticket,
 } from "./types";
@@ -23,6 +24,7 @@ export type OrgScoped = {
   chunks: Chunk;
   kbArticles: KbArticle;
   conversations: Conversation;
+  messages: Message;
   tickets: Ticket;
   apiKeys: ApiKey;
   llmUsage: LlmUsage;

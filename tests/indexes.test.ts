@@ -37,6 +37,11 @@ describe("ensureIndexes", () => {
     expect(tickets.some((i) => i.name === "orgId_1_status_1_createdAt_-1")).toBe(true);
   });
 
+  it("creates an orgId-scoped index on messages", async () => {
+    const idx = await db.collection("messages").indexes();
+    expect(idx.some((i) => i.name === "orgId_1_conversationId_1_createdAt_1")).toBe(true);
+  });
+
   it("creates a unique hashedKey index on apiKeys", async () => {
     const idx = await db.collection("apiKeys").indexes();
     expect(idx.find((i) => i.name === "hashedKey_1")?.unique).toBe(true);
