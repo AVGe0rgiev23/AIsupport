@@ -27,6 +27,38 @@ describe("formatChunks", () => {
     expect(out).toContain("[1] (Refunds) text 0");
     expect(out).toContain("[2] text 1");
   });
+
+  it("wraps the numbered chunks inside <retrieved_documents> delimiters", () => {
+    const out = formatChunks([chunk(0, "Refunds"), chunk(1, null)]);
+    expect(out).toContain("<retrieved_documents>");
+    expect(out).toContain("</retrieved_documents>");
+
+    const openTag = out.indexOf("<retrieved_documents>");
+    const closeTag = out.indexOf("</retrieved_documents>");
+    const firstChunk = out.indexOf("[1] (Refunds) text 0");
+    const secondChunk = out.indexOf("[2] text 1");
+
+    expect(openTag).toBeGreaterThanOrEqual(0);
+    expect(closeTag).toBeGreaterThan(openTag);
+    expect(firstChunk).toBeGreaterThan(openTag);
+    expect(firstChunk).toBeLessThan(closeTag);
+    expect(secondChunk).toBeGreaterThan(openTag);
+    expect(secondChunk).toBeLessThan(closeTag);
+  });
+
+  it("emits a placeholder inside the delimiters when there are no matching chunks", () => {
+    const out = formatChunks([]);
+    expect(out).toContain("<retrieved_documents>");
+    expect(out).toContain("</retrieved_documents>");
+    expect(out).toContain("(no matching documents found)");
+
+    const openTag = out.indexOf("<retrieved_documents>");
+    const closeTag = out.indexOf("</retrieved_documents>");
+    const placeholder = out.indexOf("(no matching documents found)");
+
+    expect(placeholder).toBeGreaterThan(openTag);
+    expect(placeholder).toBeLessThan(closeTag);
+  });
 });
 
 describe("recentHistory", () => {
@@ -44,5 +76,13 @@ describe("recentHistory", () => {
       { role: "user", content: "hi" },
       { role: "assistant", content: "hello" },
     ]);
+  });
+
+  it("defaults to the last 10 messages when no limit argument is given", () => {
+    const messages = Array.from({ length: 15 }, (_, i) => msg("user", `m${i}`));
+    const out = recentHistory(messages);
+    expect(out).toHaveLength(10);
+    expect(out[0].content).toBe("m5");
+    expect(out[9].content).toBe("m14");
   });
 });
