@@ -1,8 +1,8 @@
-import { ObjectId } from "mongodb";
+import { ObjectId, type Db } from "mongodb";
 import { createUIMessageStream, createUIMessageStreamResponse } from "ai";
 import { getDb } from "@/lib/db/client";
 import type { Message, Organization } from "@/lib/db/types";
-import { withOrg } from "@/lib/db/withOrg";
+import { withOrg, type OrgDb } from "@/lib/db/withOrg";
 import { searchChunks, type ScoredChunk } from "@/lib/db/vectorSearch";
 import { verifyWidgetToken } from "@/lib/widgetToken";
 import { getTodayUsage, incrementUsage } from "@/lib/llmUsage";
@@ -54,25 +54,29 @@ export async function POST(req: Request) {
   }
 
   const orgId = new ObjectId(tokenPayload.orgId);
-  const db = await getDb();
-  const orgDb = withOrg(db, orgId);
 
-  // Everything below — org lookup through history fetch — is DB/network work
-  // that can throw on a transient blip (a Mongo hiccup, a separate
-  // chat-independent Gemini embedding-quota 429, etc.), and none of it may
-  // ever surface as a raw 500. One guard covers the whole section rather than
-  // a narrow inner one. conversationId may or may not exist yet at the point
-  // of failure, which is why the catch branches on it: with a conversationId,
-  // the visitor still gets the lead-capture handoff via the escalation
-  // stream; without one (e.g. the org lookup itself failed), there is no
-  // conversation for a ticket to attach to, so a plain 503 is returned —
-  // Task 12's client-side handling degrades that to the same lead-capture
-  // form, so the visitor still ends up with a human handoff either way.
+  // Everything below — DB connection through history fetch — is DB/network
+  // work that can throw on a transient blip (getDb()'s Mongo connection, a
+  // Mongo hiccup on any query, a separate chat-independent Gemini
+  // embedding-quota 429, etc.), and none of it may ever surface as a raw 500.
+  // One guard covers the whole section rather than a narrow inner one.
+  // conversationId may or may not exist yet at the point of failure, which is
+  // why the catch branches on it: with a conversationId, the visitor still
+  // gets the lead-capture handoff via the escalation stream; without one
+  // (e.g. getDb() or the org lookup itself failed), there is no conversation
+  // for a ticket to attach to, so a plain 503 is returned — Task 12's
+  // client-side handling degrades that to the same lead-capture form, so the
+  // visitor still ends up with a human handoff either way.
   let conversationId: ObjectId | null = null;
+  let db: Db;
+  let orgDb: OrgDb;
   let org: Organization;
   let chunks: ScoredChunk[];
   let history: Message[];
   try {
+    db = await getDb();
+    orgDb = withOrg(db, orgId);
+
     const foundOrg = await db.collection<Organization>("organizations").findOne({ _id: orgId });
     if (!foundOrg) return Response.json({ error: "Organization not found" }, { status: 404 });
     org = foundOrg;
