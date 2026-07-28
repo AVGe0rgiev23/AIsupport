@@ -35,6 +35,15 @@ export async function POST(req: Request) {
   const conversationIdRaw = body?.conversationId as string | null | undefined;
   const message = body?.message as string | undefined;
 
+  // Both fields are attacker-controlled JSON: an unchecked `as string` cast
+  // erases at runtime. A non-string widgetToken would otherwise reach
+  // verifyWidgetToken() and throw on token.split(...), above the try/catch
+  // below; a non-string message (e.g. a number) would pass `!message`,
+  // then `message.length` reads as `undefined`, silently skipping the
+  // length guard and flowing into the DB insert and embedQuery.
+  if (typeof widgetToken !== "string" || typeof message !== "string") {
+    return Response.json({ error: "widgetToken and message are required" }, { status: 400 });
+  }
   if (!widgetToken || !message) {
     return Response.json({ error: "widgetToken and message are required" }, { status: 400 });
   }
