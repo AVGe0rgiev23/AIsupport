@@ -6,6 +6,7 @@ import {
   generateSiteKey,
   hashSiteKey,
   isOriginAllowed,
+  normalizeDomains,
   verifySiteKey,
 } from "@/lib/siteKeys";
 
@@ -52,6 +53,19 @@ describe("isOriginAllowed", () => {
 
   it("rejects malformed origins", () => {
     expect(isOriginAllowed("not-a-url", ["acme.com"])).toBe(false);
+  });
+});
+
+describe("normalizeDomains", () => {
+  it("lowercases, trims, dedupes, and drops empties", () => {
+    expect(normalizeDomains("Acme.com, help.ACME.com , acme.com ,,")).toEqual([
+      "acme.com",
+      "help.acme.com",
+    ]);
+  });
+
+  it("returns an empty array for blank input", () => {
+    expect(normalizeDomains("   ")).toEqual([]);
   });
 });
 

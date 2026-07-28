@@ -3,12 +3,10 @@
 import { del, put } from "@vercel/blob";
 import { ObjectId } from "mongodb";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { tasks } from "@trigger.dev/sdk";
-import { auth } from "@/auth";
+import { requireOrgDb } from "@/lib/auth/requireOrgDb";
 import type { Source, SourceConfig } from "@/lib/db/types";
-import { getDb } from "@/lib/db/client";
-import { withOrg, type OrgDb } from "@/lib/db/withOrg";
+import type { OrgDb } from "@/lib/db/withOrg";
 import { env } from "@/lib/env";
 import type { crawlWebsite } from "@/trigger/crawl-website";
 import type { ingestDocument } from "@/trigger/ingest-document";
@@ -18,19 +16,6 @@ export type SourceActionState = { ok?: boolean; error?: string };
 
 const MAX_UPLOAD_BYTES = 4.5 * 1024 * 1024; // Vercel server-action body limit
 const FILE_EXTENSIONS = [".pdf", ".docx", ".md", ".txt"];
-
-async function requireOrgDb(): Promise<{ orgDb: OrgDb; orgId: ObjectId }> {
-  const session = await auth();
-  if (!session?.user?.id) redirect("/signin");
-  const userId = new ObjectId(session.user.id);
-  const db = await getDb();
-  const user = await db.collection("users").findOne({ _id: userId });
-  const orgId = user?.activeOrgId as ObjectId | undefined;
-  if (!orgId) redirect("/onboarding");
-  const member = await db.collection("memberships").findOne({ userId, orgId });
-  if (!member) throw new Error("Not a member of the active organization");
-  return { orgDb: withOrg(db, orgId), orgId };
-}
 
 /** One typed trigger call per task id — a union type param does not typecheck. */
 async function triggerIngestion(

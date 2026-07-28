@@ -10,6 +10,15 @@ export function hashSiteKey(key: string): string {
   return createHash("sha256").update(key).digest("hex");
 }
 
+export function normalizeDomains(raw: string): string[] {
+  const seen = new Set<string>();
+  for (const part of raw.split(",")) {
+    const domain = part.trim().toLowerCase();
+    if (domain) seen.add(domain);
+  }
+  return [...seen];
+}
+
 export async function createSiteKey(
   db: Db,
   orgId: ObjectId,
