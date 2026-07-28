@@ -8,6 +8,7 @@ beforeAll(() => {
   process.env.AUTH_SECRET = "0123456789abcdef0123456789abcdef";
   process.env.TRIGGER_SECRET_KEY = "tr_dev_test";
   process.env.BLOB_READ_WRITE_TOKEN = "vercel_blob_rw_test";
+  process.env.WIDGET_TOKEN_SECRET = "widget-token-secret-at-least-32-chars-long";
   process.env.LLM_PROVIDER = "google";
 });
 

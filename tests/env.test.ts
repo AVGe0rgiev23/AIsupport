@@ -9,6 +9,7 @@ const valid = {
   AUTH_SECRET: "0123456789abcdef0123456789abcdef",
   TRIGGER_SECRET_KEY: "tr_dev_test",
   BLOB_READ_WRITE_TOKEN: "vercel_blob_rw_test",
+  WIDGET_TOKEN_SECRET: "widget-token-secret-at-least-32-chars-long",
 };
 
 describe("loadEnv", () => {

@@ -6,6 +6,7 @@ const envSchema = z.object({
   GROQ_API_KEY: z.string().min(1, "required"),
   LLM_PROVIDER: z.enum(["google", "groq"]).default("google"),
   WIDGET_DAILY_MSG_CAP: z.coerce.number().int().positive().default(200),
+  WIDGET_TOKEN_SECRET: z.string().min(32, "must be at least 32 characters"),
   RESEND_API_KEY: z.string().min(1, "required"),
   AUTH_SECRET: z.string().min(32, "must be at least 32 characters"),
   TRIGGER_SECRET_KEY: z.string().min(1, "required"),
