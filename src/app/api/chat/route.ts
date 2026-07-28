@@ -1,9 +1,9 @@
 import { ObjectId } from "mongodb";
 import { createUIMessageStream, createUIMessageStreamResponse } from "ai";
 import { getDb } from "@/lib/db/client";
-import type { Organization } from "@/lib/db/types";
+import type { Message, Organization } from "@/lib/db/types";
 import { withOrg } from "@/lib/db/withOrg";
-import { searchChunks } from "@/lib/db/vectorSearch";
+import { searchChunks, type ScoredChunk } from "@/lib/db/vectorSearch";
 import { verifyWidgetToken } from "@/lib/widgetToken";
 import { getTodayUsage, incrementUsage } from "@/lib/llmUsage";
 import { embedQuery } from "@/lib/ai/embeddings";
@@ -59,7 +59,19 @@ export async function POST(req: Request) {
   const org = await db.collection<Organization>("organizations").findOne({ _id: orgId });
   if (!org) return Response.json({ error: "Organization not found" }, { status: 404 });
 
-  let conversationId = conversationIdRaw ? new ObjectId(conversationIdRaw) : null;
+  // A client-supplied conversationId is untrusted: it may be fabricated, or a
+  // real id belonging to another org. withOrg's orgId stamp means no message
+  // could ever leak cross-tenant, but an unverified id would still create
+  // orphaned messages pointing at a conversation that isn't the visitor's.
+  // Resolve it against this org first; if it doesn't resolve, silently fall
+  // back to creating a fresh conversation instead of erroring or echoing the
+  // unverified id back.
+  let conversationId: ObjectId | null = null;
+  if (conversationIdRaw) {
+    const candidateId = new ObjectId(conversationIdRaw);
+    const existing = await orgDb.findOne("conversations", { _id: candidateId });
+    if (existing) conversationId = candidateId;
+  }
   if (!conversationId) {
     const now = new Date();
     const res = await orgDb.insertOne("conversations", {
@@ -91,9 +103,24 @@ export async function POST(req: Request) {
     return escalationStream(conversationId, "quota");
   }
 
-  const vector = await embedQuery(message);
-  const chunks = await searchChunks(db, orgId, vector, 8);
-  const history = await orgDb.find("messages", { conversationId }, { sort: { createdAt: 1 } }).toArray();
+  // embedQuery/searchChunks/history hit the DB and a separate (chat-independent)
+  // Gemini embedding quota — any of the three can throw even when the chat
+  // provider is perfectly healthy. Never let that surface as a raw 500: fall
+  // back to the same escalation stream used for the quota case.
+  let chunks: ScoredChunk[];
+  let history: Message[];
+  try {
+    const vector = await embedQuery(message);
+    chunks = await searchChunks(db, orgId, vector, 8);
+    history = await orgDb.find("messages", { conversationId }, { sort: { createdAt: 1 } }).toArray();
+  } catch (err) {
+    console.error("chat retrieval failed", {
+      orgId: orgId.toString(),
+      conversationId: conversationId.toString(),
+      err,
+    });
+    return escalationStream(conversationId, "error");
+  }
 
   const primaryName: ProviderName = (org.aiConfig.provider as ProviderName | null) ?? env().LLM_PROVIDER;
   const fallbackName = fallbackProvider(primaryName);
@@ -105,25 +132,39 @@ export async function POST(req: Request) {
     messages: recentHistory(history),
     tools: { escalate_to_human: escalateToHumanTool },
     onFinish: async (event, providerName) => {
-      const citations = parseCitations(event.text, chunks);
-      await orgDb.insertOne("messages", {
-        conversationId: conversationId!,
-        role: "assistant",
-        content: event.text,
-        citations,
-        usage: {
-          provider: providerName,
-          inputTokens: event.usage.inputTokens ?? 0,
-          outputTokens: event.usage.outputTokens ?? 0,
-        },
-        createdAt: new Date(),
-      });
-      await incrementUsage(
-        db,
-        orgId,
-        providerName,
-        (event.usage.inputTokens ?? 0) + (event.usage.outputTokens ?? 0),
-      );
+      try {
+        const citations = parseCitations(event.text, chunks);
+        await orgDb.insertOne("messages", {
+          conversationId: conversationId!,
+          role: "assistant",
+          content: event.text,
+          citations,
+          usage: {
+            provider: providerName,
+            inputTokens: event.usage.inputTokens ?? 0,
+            outputTokens: event.usage.outputTokens ?? 0,
+          },
+          createdAt: new Date(),
+        });
+        await incrementUsage(
+          db,
+          orgId,
+          providerName,
+          (event.usage.inputTokens ?? 0) + (event.usage.outputTokens ?? 0),
+        );
+      } catch (err) {
+        // The visitor has already received the full reply by the time
+        // onFinish runs — rethrowing here would hard-error the stream tail
+        // via the SDK's internal flush (controller.error(...)). Losing this
+        // message/usage write is the accepted lesser evil; the log is what
+        // makes it detectable.
+        console.error("chat onFinish persistence failed", {
+          orgId: orgId.toString(),
+          conversationId: conversationId!.toString(),
+          providerName,
+          err,
+        });
+      }
     },
   });
 
