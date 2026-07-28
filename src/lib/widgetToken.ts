@@ -35,12 +35,25 @@ export function verifyWidgetToken(token: string): WidgetTokenPayload | null {
   const b = Buffer.from(expected);
   if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
 
-  let payload: WidgetTokenPayload;
+  let payload: unknown;
   try {
     payload = JSON.parse(Buffer.from(body, "base64url").toString());
   } catch {
     return null;
   }
-  if (typeof payload.exp !== "number" || payload.exp < Date.now()) return null;
+
+  if (!isWidgetTokenPayload(payload)) return null;
+  if (payload.exp < Date.now()) return null;
   return payload;
+}
+
+function isWidgetTokenPayload(value: unknown): value is WidgetTokenPayload {
+  if (typeof value !== "object" || value === null) return false;
+  const candidate = value as Record<string, unknown>;
+  return (
+    typeof candidate.orgId === "string" &&
+    typeof candidate.verifiedOrigin === "string" &&
+    typeof candidate.exp === "number" &&
+    Number.isFinite(candidate.exp)
+  );
 }
