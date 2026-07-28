@@ -5,6 +5,7 @@ import type {
   FindOptions,
   ObjectId,
   UpdateFilter,
+  UpdateOptions,
 } from "mongodb";
 import type {
   ApiKey,
@@ -82,12 +83,14 @@ export function withOrg(db: Db, orgId: ObjectId) {
       name: K,
       filter: Filter<OrgScoped[K]>,
       update: UpdateFilter<OrgScoped[K]>,
+      options?: UpdateOptions,
     ) {
       return db
         .collection<OrgScoped[K]>(name)
         .updateOne(
           scoped(filter as Document) as Filter<OrgScoped[K]>,
           update,
+          options,
         );
     },
 
