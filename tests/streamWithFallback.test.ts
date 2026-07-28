@@ -133,4 +133,71 @@ describe("streamWithFallback", () => {
     finishers.forEach((f) => f());
     expect(seen).toEqual(["groq:real answer"]);
   });
+
+  it("never forwards onFinish for a discarded call even when it fires before the call is known to be discarded (early-flush ordering)", async () => {
+    // In the real SDK, onFinish fires from the stream's flush(), which can
+    // race ahead of the continuation that marks a call discarded — a
+    // rate-limited stream closes almost immediately, so its onFinish can
+    // fire before we've even inspected the first meaningful part. A guard
+    // that is only set *after* we decide the outcome is too late to catch
+    // this; the guard must default to "not yet committed" and only forward
+    // a call's onFinish once we've explicitly committed to using it.
+    const seen: string[] = [];
+    const streamTextFn = ({ model, onFinish }: any) => {
+      if (model.tag === "google") {
+        // Fires synchronously, before streamWithFallback has read any part
+        // off this call's fullStream at all.
+        onFinish?.({ text: "", usage: {} });
+        return fakeStream([START, { type: "error", error: rateLimitError() }]);
+      }
+      onFinish?.({ text: "real answer", usage: {} });
+      return fakeStream([START, { type: "text-delta", text: "real answer" }]);
+    };
+    const res = await streamWithFallback({
+      primary: { name: "google", model: { tag: "google" } as any },
+      fallback: { name: "groq", model: { tag: "groq" } as any },
+      system: "sys",
+      messages: [],
+      tools: {},
+      onFinish: (event, provider) => {
+        seen.push(`${provider}:${event.text}`);
+      },
+      streamTextFn: streamTextFn as any,
+    });
+    expect(res.ok).toBe(true);
+    expect(seen).toEqual(["groq:real answer"]);
+  });
+
+  it("uses maxRetries: 0 for the primary and the SDK default (2) for the fallback", async () => {
+    const seenRetries: number[] = [];
+    const streamTextFn = ({ model, maxRetries }: any) => {
+      seenRetries.push(maxRetries);
+      return model.tag === "google"
+        ? fakeStream([START, { type: "error", error: rateLimitError() }])
+        : fakeStream([START, { type: "text-delta", text: "hi" }]);
+    };
+    await streamWithFallback({
+      primary: { name: "google", model: { tag: "google" } as any },
+      fallback: { name: "groq", model: { tag: "groq" } as any },
+      system: "sys",
+      messages: [],
+      tools: {},
+      streamTextFn: streamTextFn as any,
+    });
+    expect(seenRetries).toEqual([0, 2]);
+  });
+
+  it("treats a stream that yields only start (no further parts) as a successful primary", async () => {
+    const streamTextFn = () => fakeStream([START]);
+    const res = await streamWithFallback({
+      primary: { name: "google", model: {} as any },
+      fallback: { name: "groq", model: {} as any },
+      system: "sys",
+      messages: [],
+      tools: {},
+      streamTextFn: streamTextFn as any,
+    });
+    expect(res.ok).toBe(true);
+    if (res.ok) expect(res.providerName).toBe("google");
+  });
 });
