@@ -56,70 +56,83 @@ export async function POST(req: Request) {
   const orgId = new ObjectId(tokenPayload.orgId);
   const db = await getDb();
   const orgDb = withOrg(db, orgId);
-  const org = await db.collection<Organization>("organizations").findOne({ _id: orgId });
-  if (!org) return Response.json({ error: "Organization not found" }, { status: 404 });
 
-  // A client-supplied conversationId is untrusted: it may be fabricated, or a
-  // real id belonging to another org. withOrg's orgId stamp means no message
-  // could ever leak cross-tenant, but an unverified id would still create
-  // orphaned messages pointing at a conversation that isn't the visitor's.
-  // Resolve it against this org first; if it doesn't resolve, silently fall
-  // back to creating a fresh conversation instead of erroring or echoing the
-  // unverified id back.
+  // Everything below — org lookup through history fetch — is DB/network work
+  // that can throw on a transient blip (a Mongo hiccup, a separate
+  // chat-independent Gemini embedding-quota 429, etc.), and none of it may
+  // ever surface as a raw 500. One guard covers the whole section rather than
+  // a narrow inner one. conversationId may or may not exist yet at the point
+  // of failure, which is why the catch branches on it: with a conversationId,
+  // the visitor still gets the lead-capture handoff via the escalation
+  // stream; without one (e.g. the org lookup itself failed), there is no
+  // conversation for a ticket to attach to, so a plain 503 is returned —
+  // Task 12's client-side handling degrades that to the same lead-capture
+  // form, so the visitor still ends up with a human handoff either way.
   let conversationId: ObjectId | null = null;
-  if (conversationIdRaw) {
-    const candidateId = new ObjectId(conversationIdRaw);
-    const existing = await orgDb.findOne("conversations", { _id: candidateId });
-    if (existing) conversationId = candidateId;
-  }
-  if (!conversationId) {
-    const now = new Date();
-    const res = await orgDb.insertOne("conversations", {
-      channel: "widget",
-      visitor: { email: null, name: null, pageUrl: tokenPayload.verifiedOrigin },
-      status: "open",
-      resolution: null,
-      createdAt: now,
-      updatedAt: now,
-    });
-    conversationId = res.insertedId as ObjectId;
-  }
-
-  await orgDb.insertOne("messages", {
-    conversationId,
-    role: "user",
-    content: message,
-    citations: [],
-    usage: null,
-    createdAt: new Date(),
-  });
-
-  // Read-then-increment: concurrent requests near the cap can each read the
-  // same pre-increment count and slightly overshoot. Accepted — this is a soft
-  // guard against one tenant draining a shared free-tier quota, not a billing
-  // boundary. An atomic counter isn't worth the complexity here.
-  const usedToday = await getTodayUsage(db, orgId);
-  if (usedToday >= env().WIDGET_DAILY_MSG_CAP) {
-    return escalationStream(conversationId, "quota");
-  }
-
-  // embedQuery/searchChunks/history hit the DB and a separate (chat-independent)
-  // Gemini embedding quota — any of the three can throw even when the chat
-  // provider is perfectly healthy. Never let that surface as a raw 500: fall
-  // back to the same escalation stream used for the quota case.
+  let org: Organization;
   let chunks: ScoredChunk[];
   let history: Message[];
   try {
+    const foundOrg = await db.collection<Organization>("organizations").findOne({ _id: orgId });
+    if (!foundOrg) return Response.json({ error: "Organization not found" }, { status: 404 });
+    org = foundOrg;
+
+    // A client-supplied conversationId is untrusted: it may be fabricated, or a
+    // real id belonging to another org. withOrg's orgId stamp means no message
+    // could ever leak cross-tenant, but an unverified id would still create
+    // orphaned messages pointing at a conversation that isn't the visitor's.
+    // Resolve it against this org first; if it doesn't resolve, silently fall
+    // back to creating a fresh conversation instead of erroring or echoing the
+    // unverified id back.
+    if (conversationIdRaw) {
+      const candidateId = new ObjectId(conversationIdRaw);
+      const existing = await orgDb.findOne("conversations", { _id: candidateId });
+      if (existing) conversationId = candidateId;
+    }
+    if (!conversationId) {
+      const now = new Date();
+      const res = await orgDb.insertOne("conversations", {
+        channel: "widget",
+        visitor: { email: null, name: null, pageUrl: tokenPayload.verifiedOrigin },
+        status: "open",
+        resolution: null,
+        createdAt: now,
+        updatedAt: now,
+      });
+      conversationId = res.insertedId as ObjectId;
+    }
+
+    await orgDb.insertOne("messages", {
+      conversationId,
+      role: "user",
+      content: message,
+      citations: [],
+      usage: null,
+      createdAt: new Date(),
+    });
+
+    // Read-then-increment: concurrent requests near the cap can each read the
+    // same pre-increment count and slightly overshoot. Accepted — this is a soft
+    // guard against one tenant draining a shared free-tier quota, not a billing
+    // boundary. An atomic counter isn't worth the complexity here.
+    const usedToday = await getTodayUsage(db, orgId);
+    if (usedToday >= env().WIDGET_DAILY_MSG_CAP) {
+      return escalationStream(conversationId, "quota");
+    }
+
     const vector = await embedQuery(message);
     chunks = await searchChunks(db, orgId, vector, 8);
     history = await orgDb.find("messages", { conversationId }, { sort: { createdAt: 1 } }).toArray();
   } catch (err) {
-    console.error("chat retrieval failed", {
+    console.error("chat pre-stream work failed", {
       orgId: orgId.toString(),
-      conversationId: conversationId.toString(),
+      conversationId: conversationId ? conversationId.toString() : null,
       err,
     });
-    return escalationStream(conversationId, "error");
+    if (conversationId) {
+      return escalationStream(conversationId, "error");
+    }
+    return Response.json({ error: "Temporarily unavailable" }, { status: 503 });
   }
 
   const primaryName: ProviderName = (org.aiConfig.provider as ProviderName | null) ?? env().LLM_PROVIDER;
