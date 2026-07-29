@@ -2,6 +2,7 @@ import type {
   Db,
   Document,
   Filter,
+  FindOneAndUpdateOptions,
   FindOptions,
   ObjectId,
   UpdateFilter,
@@ -17,6 +18,7 @@ import type {
   Message,
   Source,
   Ticket,
+  WidgetRateLimit,
 } from "./types";
 
 export type OrgScoped = {
@@ -29,6 +31,7 @@ export type OrgScoped = {
   tickets: Ticket;
   apiKeys: ApiKey;
   llmUsage: LlmUsage;
+  widgetRateLimit: WidgetRateLimit;
 };
 
 export type OrgScopedName = keyof OrgScoped;
@@ -91,6 +94,26 @@ export function withOrg(db: Db, orgId: ObjectId) {
           scoped(filter as Document) as Filter<OrgScoped[K]>,
           update,
           options,
+        );
+    },
+
+    // Atomic read-modify-write in one round trip. Added for the widget
+    // throttle counter, which must observe its own post-increment value to
+    // decide allow/deny; the same orgId stamping as updateOne applies, and on
+    // upsert Mongo copies the scoped filter (including orgId) into the new
+    // document, so a throttle row can never be created unscoped.
+    findOneAndUpdate<K extends OrgScopedName>(
+      name: K,
+      filter: Filter<OrgScoped[K]>,
+      update: UpdateFilter<OrgScoped[K]>,
+      options?: FindOneAndUpdateOptions,
+    ) {
+      return db
+        .collection<OrgScoped[K]>(name)
+        .findOneAndUpdate(
+          scoped(filter as Document) as Filter<OrgScoped[K]>,
+          update,
+          options ?? {},
         );
     },
 

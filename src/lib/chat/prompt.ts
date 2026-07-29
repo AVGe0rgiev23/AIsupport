@@ -12,10 +12,27 @@ export function buildSystemPrompt(tone: string): string {
   ].join("\n");
 }
 
+// Chunk text and headings are third-party web content — src/trigger/crawl-website.ts
+// ingests arbitrary pages — and buildSystemPrompt above explicitly NAMES
+// </retrieved_documents> as the boundary of untrusted data. A crawled page
+// containing that literal string would therefore appear to close the block
+// early and promote the rest of its own text to trusted-instruction position;
+// the hardening instruction is precisely what makes the spoof effective.
+// Defang the delimiter (both directions, and the whitespace/case variants a
+// tolerant reader would still resolve) before interpolating.
+const DELIMITER_RE = /<\s*\/?\s*retrieved_documents\s*>/gi;
+
+function neutralizeDelimiters(text: string): string {
+  return text.replace(DELIMITER_RE, "[redacted-delimiter]");
+}
+
 export function formatChunks(chunks: ScoredChunk[]): string {
   const body = chunks.length
     ? chunks
-        .map((c, i) => `[${i + 1}] ${c.heading ? `(${c.heading}) ` : ""}${c.text}`)
+        .map(
+          (c, i) =>
+            `[${i + 1}] ${c.heading ? `(${neutralizeDelimiters(c.heading)}) ` : ""}${neutralizeDelimiters(c.text)}`,
+        )
         .join("\n\n")
     : "(no matching documents found)";
   return `<retrieved_documents>\n${body}\n</retrieved_documents>`;

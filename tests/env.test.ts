@@ -24,6 +24,33 @@ describe("loadEnv", () => {
     expect(env.APP_URL).toBe("http://localhost:3000");
   });
 
+  // GOOGLE_GENERATIVE_AI_API_KEY / GROQ_API_KEY are single GLOBAL keys shared
+  // by every tenant, and each visitor message now costs two recorded provider
+  // calls (embedding + chat). 50 counter units ~= 25 messages/org/day, so the
+  // ~250/day floor of the Gemini free tier survives several tenants.
+  it("defaults WIDGET_DAILY_MSG_CAP to 50", () => {
+    expect(loadEnv(valid as unknown as NodeJS.ProcessEnv).WIDGET_DAILY_MSG_CAP).toBe(50);
+  });
+
+  it("defaults WIDGET_RATE_LIMIT_PER_MIN and coerces both counters from strings", () => {
+    const env = loadEnv(valid as unknown as NodeJS.ProcessEnv);
+    expect(env.WIDGET_RATE_LIMIT_PER_MIN).toBe(20);
+
+    const overridden = loadEnv({
+      ...valid,
+      WIDGET_DAILY_MSG_CAP: "10",
+      WIDGET_RATE_LIMIT_PER_MIN: "3",
+    } as unknown as NodeJS.ProcessEnv);
+    expect(overridden.WIDGET_DAILY_MSG_CAP).toBe(10);
+    expect(overridden.WIDGET_RATE_LIMIT_PER_MIN).toBe(3);
+  });
+
+  it("rejects a non-positive WIDGET_RATE_LIMIT_PER_MIN", () => {
+    expect(() =>
+      loadEnv({ ...valid, WIDGET_RATE_LIMIT_PER_MIN: "0" } as unknown as NodeJS.ProcessEnv),
+    ).toThrowError(/WIDGET_RATE_LIMIT_PER_MIN/);
+  });
+
   it("rejects an unknown LLM_PROVIDER", () => {
     expect(() =>
       loadEnv({ ...valid, LLM_PROVIDER: "openai" } as unknown as NodeJS.ProcessEnv),

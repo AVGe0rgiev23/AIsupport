@@ -67,6 +67,48 @@ describe("normalizeDomains", () => {
   it("returns an empty array for blank input", () => {
     expect(normalizeDomains("   ")).toEqual([]);
   });
+
+  // isOriginAllowed compares against URL.hostname, so anything that isn't a
+  // bare hostname could never match and would save as a silently-dead config.
+  it("strips scheme, port, path, query and fragment down to the hostname", () => {
+    expect(normalizeDomains("https://acme.com")).toEqual(["acme.com"]);
+    expect(normalizeDomains("http://acme.com/")).toEqual(["acme.com"]);
+    expect(normalizeDomains("acme.com:3000")).toEqual(["acme.com"]);
+    expect(normalizeDomains("https://acme.com:3000/support?a=1#x")).toEqual(["acme.com"]);
+    expect(normalizeDomains("HTTPS://ACME.COM/Help")).toEqual(["acme.com"]);
+  });
+
+  it("strips a leading www. or *. so both forms collapse onto the base domain", () => {
+    expect(normalizeDomains("www.acme.com")).toEqual(["acme.com"]);
+    expect(normalizeDomains("*.acme.com")).toEqual(["acme.com"]);
+    // isOriginAllowed already allows subdomains, so these are the same entry.
+    expect(normalizeDomains("https://www.acme.com/, acme.com")).toEqual(["acme.com"]);
+  });
+
+  // `host.endsWith("." + d)` turns a bare TLD into an allow-all: with "com"
+  // stored, https://evil.com passes isOriginAllowed for every tenant.
+  it("rejects a bare TLD, which would otherwise allow every domain under it", () => {
+    expect(normalizeDomains("com")).toEqual([]);
+    expect(normalizeDomains("co.uk, com, acme.com")).toEqual(["co.uk", "acme.com"]);
+    expect(isOriginAllowed("https://evil.com", normalizeDomains("com"))).toBe(false);
+  });
+
+  it("rejects junk that could never be a hostname", () => {
+    expect(normalizeDomains("not a domain, <script>, @@@")).toEqual([]);
+  });
+
+  // Deliberate carve-out: localhost is a reserved name (RFC 6761), can never
+  // be a public suffix, and is the only way to test a widget locally.
+  it("keeps localhost despite having no dot", () => {
+    expect(normalizeDomains("http://localhost:3000")).toEqual(["localhost"]);
+    expect(normalizeDomains("localhost")).toEqual(["localhost"]);
+  });
+
+  it("normalizes trailing dots and dedupes across input forms", () => {
+    expect(normalizeDomains("acme.com., https://www.acme.com:443/x, ACME.COM")).toEqual([
+      "acme.com",
+    ]);
+  });
 });
 
 describe("createSiteKey / verifySiteKey", () => {

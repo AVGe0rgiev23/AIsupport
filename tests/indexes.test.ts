@@ -52,6 +52,13 @@ describe("ensureIndexes", () => {
     expect(idx.find((i) => i.name === "orgId_1_date_1_provider_1")?.unique).toBe(true);
   });
 
+  it("creates a unique per-caller throttle counter index plus a TTL reaper", async () => {
+    const idx = await db.collection("widgetRateLimit").indexes();
+    expect(idx.find((i) => i.name === "orgId_1_bucket_1_window_1")?.unique).toBe(true);
+    // Without the TTL the throttle counters would accumulate forever on M0.
+    expect(idx.find((i) => i.name === "expiresAt_1")?.expireAfterSeconds).toBe(0);
+  });
+
   it("is idempotent", async () => {
     await expect(ensureIndexes(db)).resolves.toBeUndefined();
   });

@@ -140,3 +140,17 @@ export interface LlmUsage {
   requests: number;
   tokens: number;
 }
+
+/** Coarse per-caller throttle counter for the anonymous widget endpoints.
+ *  Same Mongo counter shape as LlmUsage — no new service (see the $0/month
+ *  budget constraint). `bucket` is a hashed, deliberately BOUNDED projection
+ *  of the caller (see src/lib/chat/rateLimit.ts) so the throttle store can
+ *  never itself become an unbounded write target. */
+export interface WidgetRateLimit {
+  _id: ObjectId;
+  orgId: ObjectId;
+  bucket: string; // 2 hex chars — 256 buckets per org per window
+  window: number; // floor(epochMs / RATE_LIMIT_WINDOW_MS)
+  count: number;
+  expiresAt: Date; // TTL-reaped
+}

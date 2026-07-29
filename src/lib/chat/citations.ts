@@ -6,6 +6,24 @@ export interface Citation {
   documentId: ObjectId;
 }
 
+// buildSystemPrompt mandates inline [n] markers and parseCitations below
+// consumes them server-side, but the widget renders the assistant's raw text.
+// Without stripping, every visitor sees literal "[1] [2]" noise in every
+// reply. Kept as a pure string transform so the widget's text-only,
+// React-escaped rendering is untouched — no markdown, no HTML, no links.
+export function stripCitationMarkers(text: string): string {
+  return (
+    text
+      .replace(/\[\d+\]/g, "")
+      // Text streams in token by token, so a half-written marker would sit on
+      // screen for a frame or two unless the trailing fragment goes too.
+      .replace(/[ \t]*\[\d*$/, "")
+      .replace(/[ \t]{2,}/g, " ")
+      .replace(/[ \t]+([.,;:!?])/g, "$1")
+      .replace(/[ \t]+$/gm, "")
+  );
+}
+
 export function parseCitations(text: string, chunks: ScoredChunk[]): Citation[] {
   const seen = new Set<number>();
   const citations: Citation[] = [];

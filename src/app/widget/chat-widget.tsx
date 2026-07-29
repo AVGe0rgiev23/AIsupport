@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
+import { stripCitationMarkers } from "@/lib/chat/citations";
 
 interface Props {
   widgetToken: string;
@@ -131,7 +132,20 @@ export function ChatWidget({ widgetToken, primaryColor, greeting, position }: Pr
         {messages.map((m) => (
           <p key={m.id}>
             <strong>{m.role === "user" ? "You" : "Assistant"}:</strong>{" "}
-            {m.parts.map((p, i) => (p.type === "text" ? <span key={i}>{p.text}</span> : null))}
+            {/* The system prompt MANDATES inline [n] citation markers and the
+                route parses and persists them from the raw text — but nothing
+                renders them, so unstripped they reach the visitor as literal
+                "[1] [2]" noise on every single reply. Stripping is a pure
+                string transform applied at the render boundary only: the raw
+                text is still what gets persisted and what parseCitations reads
+                server-side, and this stays text-only inside React-escaped
+                spans. That last property is load-bearing, not incidental —
+                zero markdown/HTML/image rendering is why prompt-injected
+                content pulled out of a crawled third-party page has no
+                exfiltration beacon to reach for. */}
+            {m.parts.map((p, i) =>
+              p.type === "text" ? <span key={i}>{stripCitationMarkers(p.text)}</span> : null,
+            )}
           </p>
         ))}
       </div>

@@ -21,4 +21,13 @@ export async function ensureIndexes(db: Db): Promise<void> {
   await db.collection("apiKeys").createIndex({ hashedKey: 1 }, { unique: true });
   await db.collection("apiKeys").createIndex({ orgId: 1 });
   await db.collection("llmUsage").createIndex({ orgId: 1, date: 1, provider: 1 }, { unique: true });
+  // Widget abuse throttle (src/lib/chat/rateLimit.ts). Unique so a raced
+  // first-of-window upsert surfaces as E11000 and is retried rather than
+  // silently splitting one caller's count across two documents.
+  await db
+    .collection("widgetRateLimit")
+    .createIndex({ orgId: 1, bucket: 1, window: 1 }, { unique: true });
+  // These are per-minute counters — without a TTL they would accumulate
+  // forever on a 512 MB M0 shared by every tenant.
+  await db.collection("widgetRateLimit").createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 }
