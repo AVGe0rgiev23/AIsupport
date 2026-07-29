@@ -11,6 +11,12 @@ interface Props {
   position: "bottom-right" | "bottom-left";
 }
 
+// Keep in sync with MAX_MESSAGE_LENGTH in src/app/api/chat/route.ts. Capping
+// the input client-side means the 400 that route returns for an over-length
+// message (the most common trigger for the onError -> lead-capture handoff
+// below) can't fire from normal typing/pasting in the first place.
+const MAX_MESSAGE_LENGTH = 4000;
+
 export function ChatWidget({ widgetToken, primaryColor, greeting, position }: Props) {
   const conversationIdRef = useRef<string | null>(null);
   const [showLeadCapture, setShowLeadCapture] = useState(false);
@@ -58,7 +64,10 @@ export function ChatWidget({ widgetToken, primaryColor, greeting, position }: Pr
     },
     // Reachable in normal use: the widget token expires after an hour, so a
     // long-open tab gets a 401. Degrade to the human handoff instead of
-    // leaving the visitor with a dead input box.
+    // leaving the visitor with a dead input box. This is a guess, not a
+    // certainty (a transient network blip reaches onError the same way), so
+    // LeadCapture's "No thanks, keep chatting" control gives a way back to
+    // the chat input instead of trapping the visitor in the form.
     onError: () => {
       setEscalateReason("error");
       setShowLeadCapture(true);
@@ -86,9 +95,18 @@ export function ChatWidget({ widgetToken, primaryColor, greeting, position }: Pr
           conversationIdRef={conversationIdRef}
           reason={escalateReason}
           onSubmitted={() => setShowLeadCapture(false)}
+          onDismiss={() => setShowLeadCapture(false)}
         />
       ) : (
-        <ChatInput onSend={(text) => sendMessage({ text })} disabled={status === "streaming"} />
+        // status has four values ("submitted" | "streaming" | "ready" | "error");
+        // "submitted" covers the whole POST-to-first-chunk window (embedding +
+        // vector search + LLM time-to-first-token), during which
+        // conversationIdRef.current is still null (it's only set from the
+        // data-conversationId part the route writes once the stream opens).
+        // Disabling on anything but "ready" is what actually prevents a second
+        // send during that window from posting conversationId: null and
+        // splitting the visitor's session across two conversation documents.
+        <ChatInput onSend={(text) => sendMessage({ text })} disabled={status !== "ready"} />
       )}
     </div>
   );
@@ -110,6 +128,7 @@ function ChatInput({ onSend, disabled }: { onSend: (text: string) => void; disab
         style={{ flex: 1, border: "none", padding: 12 }}
         value={value}
         disabled={disabled}
+        maxLength={MAX_MESSAGE_LENGTH}
         onChange={(e) => setValue(e.target.value)}
         placeholder="Ask a question…"
       />
@@ -125,6 +144,7 @@ function LeadCapture({
   conversationIdRef,
   reason,
   onSubmitted,
+  onDismiss,
 }: {
   widgetToken: string;
   // Passed as the ref object itself (not dereferenced) so the parent's JSX
@@ -134,10 +154,23 @@ function LeadCapture({
   conversationIdRef: React.RefObject<string | null>;
   reason: string;
   onSubmitted: () => void;
+  onDismiss: () => void;
 }) {
   const [email, setEmail] = useState("");
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
+  // This instance stays mounted for as long as the parent's
+  // `showLeadCapture || toolEscalated` branch is true. `toolEscalated` in
+  // particular never clears on its own (escalate_to_human has no `execute`,
+  // so its tool-call part never leaves "input-available"), so `onSubmitted`
+  // clearing `showLeadCapture` alone doesn't hide this branch or unmount
+  // this component. Without a local "already sent" flag the form would
+  // still be here, still empty-looking, right after a successful submit —
+  // inviting a second press that files a second ticket against the same
+  // conversation (createEscalationTicket has no dedupe). Once true, render
+  // a confirmation instead of a resubmittable form, permanently, for this
+  // escalation instance.
+  const [submitted, setSubmitted] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -158,7 +191,16 @@ function LeadCapture({
       setError("Something went wrong — please try again.");
       return;
     }
+    setSubmitted(true);
     onSubmitted();
+  }
+
+  if (submitted) {
+    return (
+      <div style={{ padding: 12, borderTop: "1px solid #e5e7eb" }}>
+        <p>Thanks — a human will follow up at {email}.</p>
+      </div>
+    );
   }
 
   return (
@@ -179,7 +221,12 @@ function LeadCapture({
         style={{ display: "block", width: "100%", marginBottom: 8 }}
       />
       {error && <p style={{ color: "red" }}>{error}</p>}
-      <button type="submit">Send</button>
+      <div style={{ display: "flex", gap: 8 }}>
+        <button type="submit">Send</button>
+        <button type="button" onClick={onDismiss}>
+          No thanks, keep chatting
+        </button>
+      </div>
     </form>
   );
 }

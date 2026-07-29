@@ -46,15 +46,21 @@ export default async function WidgetPage({
   return (
     <ChatWidget
       widgetToken={result.widgetToken}
-      primaryColor={result.org.widgetConfig.primaryColor}
-      greeting={result.org.widgetConfig.greeting}
-      position={result.org.widgetConfig.position}
+      primaryColor={result.primaryColor}
+      greeting={result.greeting}
+      position={result.position}
     />
   );
 }
 
 type AuthorizeResult =
-  | { ok: true; org: Organization; widgetToken: string }
+  | {
+      ok: true;
+      widgetToken: string;
+      primaryColor: string;
+      greeting: string;
+      position: "bottom-right" | "bottom-left";
+    }
   | { ok: false; reason: string };
 
 // Kept as plain data-in/data-out (no JSX) and called before any JSX is
@@ -90,7 +96,21 @@ async function authorize(siteKey: string, origin: string): Promise<AuthorizeResu
     }
 
     const widgetToken = mintWidgetToken(record.orgId, origin);
-    return { ok: true, org, widgetToken };
+    // widgetConfig is declared required on Organization, but TypeScript can't
+    // verify that against what's actually stored — a document written or
+    // migrated without it would make this a runtime TypeError. Dereferencing
+    // it here, inside the try, means that throw is caught below and folded
+    // into the same neutral "temporarily unavailable" state as every other
+    // failure in this function, instead of escaping to WidgetPage's return
+    // and crashing render with Next's generic error UI inside the customer's
+    // iframe — the exact failure mode this whole function exists to prevent.
+    return {
+      ok: true,
+      widgetToken,
+      primaryColor: org.widgetConfig.primaryColor,
+      greeting: org.widgetConfig.greeting,
+      position: org.widgetConfig.position,
+    };
   } catch (err) {
     console.error("widget page failed to authorize", { siteKey, origin, err });
     return { ok: false, reason: "This widget is temporarily unavailable" };
