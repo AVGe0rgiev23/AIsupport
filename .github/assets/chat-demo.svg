@@ -1,0 +1,310 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 660" width="1000" height="660" role="img" aria-labelledby="t d">
+  <title id="t">SupportAI chat widget demo</title>
+  <desc id="d">Animated illustration. A shopper asks about returning worn boots and gets a grounded answer. They then ask for a card refund, which the bot hands to a human by collecting their email and creating a ticket. A side panel lights up each server-side step.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0B1120"/>
+      <stop offset="1" stop-color="#1E1B4B"/>
+    </linearGradient>
+    <linearGradient id="hill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5EEAD4"/>
+      <stop offset="1" stop-color="#0F766E"/>
+    </linearGradient>
+    <linearGradient id="bar" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#22D3EE"/>
+      <stop offset="1" stop-color="#A78BFA"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#0F172A" flood-opacity="0.28"/>
+    </filter>
+    <clipPath id="frame"><rect width="1000" height="660" rx="22"/></clipPath>
+    <clipPath id="emailClip"><rect x="31" y="427" width="266" height="28" rx="7"/></clipPath>
+    <clipPath id="progressClip"><rect x="652" y="602" width="300" height="6" rx="3"/></clipPath>
+    <style>
+      text { font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif; }
+      .pulse { animation: pulse 1.6s ease-in-out infinite; }
+      @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+      .dot { animation: bounce 1s ease-in-out infinite; }
+      .d2 { animation-delay: .15s; }
+      .d3 { animation-delay: .3s; }
+      @keyframes bounce { 0%,60%,100% { transform: translateY(0); opacity: .45; } 30% { transform: translateY(-4px); opacity: 1; } }
+
+      /* one 18s story loop */
+      .v1  { animation: v1 18s infinite; }
+      .t1  { animation: t1 18s infinite; }
+      .bo1 { animation: bo1 18s infinite; }
+      .v2  { animation: v2 18s infinite; }
+      .t2  { animation: t2 18s infinite; }
+      .bo2 { animation: bo2 18s infinite; }
+      .inp { animation: inp 18s infinite; }
+      .lead { animation: lead 18s infinite; }
+      .cover { animation: cover 18s infinite; }
+      .press { animation: press 18s infinite; }
+      .ok { animation: ok 18s infinite; }
+      .s1 { animation: s1 18s infinite; }
+      .s2 { animation: s2 18s infinite; }
+      .s3 { animation: s3 18s infinite; }
+      .s4 { animation: s4 18s infinite; }
+      .s5 { animation: s5 18s infinite; }
+      .s6 { animation: s6 18s infinite; }
+      .prog { animation: prog 18s linear infinite; }
+
+      @keyframes v1  { 0%,5.5%  { opacity:0; transform:translateY(12px); } 7.5%,93%  { opacity:1; transform:translateY(0); } 97.5%,100% { opacity:0; transform:translateY(0); } }
+      @keyframes t1  { 0%,10.5% { opacity:0; } 11.5%,22.8% { opacity:1; } 23.3%,100% { opacity:0; } }
+      @keyframes bo1 { 0%,23%   { opacity:0; transform:translateY(12px); } 25%,93%   { opacity:1; transform:translateY(0); } 97.5%,100% { opacity:0; transform:translateY(0); } }
+      @keyframes v2  { 0%,36.5% { opacity:0; transform:translateY(12px); } 38.5%,93% { opacity:1; transform:translateY(0); } 97.5%,100% { opacity:0; transform:translateY(0); } }
+      @keyframes t2  { 0%,39.5% { opacity:0; } 40.5%,49.5% { opacity:1; } 50%,100% { opacity:0; } }
+      @keyframes bo2 { 0%,50%   { opacity:0; transform:translateY(12px); } 52%,93%   { opacity:1; transform:translateY(0); } 97.5%,100% { opacity:0; transform:translateY(0); } }
+      @keyframes inp { 0%,55% { opacity:1; } 56.5%,73.5% { opacity:0; } 75.5%,100% { opacity:1; } }
+      @keyframes lead { 0%,56.5% { opacity:0; transform:translateY(16px); } 58.5%,72.8% { opacity:1; transform:translateY(0); } 73.6%,100% { opacity:0; transform:translateY(0); } }
+      @keyframes cover { 0%,61% { transform:translateX(0); animation-timing-function: steps(16, end); } 69%,100% { transform:translateX(200px); } }
+      @keyframes press { 0%,70.8% { opacity:0; } 71.3% { opacity:1; } 72.6%,100% { opacity:0; } }
+      @keyframes ok  { 0%,73.3% { opacity:0; transform:translateY(10px); } 75%,93% { opacity:1; transform:translateY(0); } 97.5%,100% { opacity:0; transform:translateY(0); } }
+      @keyframes s1 { 0%,8.2%  { opacity:0; } 9.6%,93%  { opacity:1; } 97.5%,100% { opacity:0; } }
+      @keyframes s2 { 0%,13.2% { opacity:0; } 14.6%,93% { opacity:1; } 97.5%,100% { opacity:0; } }
+      @keyframes s3 { 0%,23.2% { opacity:0; } 24.6%,93% { opacity:1; } 97.5%,100% { opacity:0; } }
+      @keyframes s4 { 0%,28.8% { opacity:0; } 30.2%,93% { opacity:1; } 97.5%,100% { opacity:0; } }
+      @keyframes s5 { 0%,52.1% { opacity:0; } 53.5%,93% { opacity:1; } 97.5%,100% { opacity:0; } }
+      @keyframes s6 { 0%,74.3% { opacity:0; } 75.7%,93% { opacity:1; } 97.5%,100% { opacity:0; } }
+      @keyframes prog { 0% { transform:translateX(-300px); } 93% { transform:translateX(0); } 97.5%,100% { transform:translateX(0); opacity:0; } }
+    </style>
+  </defs>
+
+  <g clip-path="url(#frame)">
+    <rect width="1000" height="660" fill="url(#bg)"/>
+
+    <!-- title row -->
+    <circle class="pulse" cx="34" cy="36" r="5" fill="#F43F5E"/>
+    <text x="48" y="41" font-size="12.5" font-weight="700" fill="#C7D2FE" letter-spacing="2">WATCH IT WORK · ONE CONVERSATION, START TO FINISH</text>
+    <rect x="840" y="23" width="136" height="26" rx="13" fill="#FFFFFF" fill-opacity=".06" stroke="#FFFFFF" stroke-opacity=".14"/>
+    <text x="908" y="40.5" font-size="12" fill="#94A3B8" text-anchor="middle">illustrative mockup</text>
+
+    <!-- ============ browser ============ -->
+    <g transform="translate(24,62)">
+      <rect width="584" height="574" rx="14" fill="#F8FAFC"/>
+      <path d="M0 14 a14 14 0 0 1 14 -14 h556 a14 14 0 0 1 14 14 v24 h-584z" fill="#E2E8F0"/>
+      <circle cx="18" cy="19" r="5" fill="#F87171"/>
+      <circle cx="34" cy="19" r="5" fill="#FBBF24"/>
+      <circle cx="50" cy="19" r="5" fill="#34D399"/>
+      <rect x="72" y="9" width="340" height="20" rx="10" fill="#FFFFFF"/>
+      <rect x="84" y="15.5" width="8" height="7" rx="1.5" fill="#64748B"/>
+      <path d="M85.5 15.5 v-2 a2.5 2.5 0 0 1 5 0 v2" stroke="#64748B" stroke-width="1.4" fill="none"/>
+      <text x="100" y="23" font-size="12" fill="#475569">acme-outdoor.shop/boots/summit-trail</text>
+
+      <!-- page content -->
+      <text x="24" y="70" font-size="14" font-weight="800" fill="#0F766E" letter-spacing="1.5">ACME OUTDOOR</text>
+      <rect x="24" y="88" width="196" height="136" rx="10" fill="#CCFBF1"/>
+      <path d="M24 196 l52 -58 l36 36 l30 -30 l78 72 v4 a10 10 0 0 1 -10 10 h-176 a10 10 0 0 1 -10 -10z" fill="url(#hill)"/>
+      <circle cx="176" cy="118" r="12" fill="#FDE68A"/>
+      <text x="24" y="254" font-size="17" font-weight="700" fill="#0F172A">Summit Trail Boots</text>
+      <text x="24" y="278" font-size="15" font-weight="600" fill="#0F766E">$149</text>
+      <rect x="24" y="294" width="196" height="8" rx="4" fill="#E2E8F0"/>
+      <rect x="24" y="310" width="176" height="8" rx="4" fill="#E2E8F0"/>
+      <rect x="24" y="326" width="140" height="8" rx="4" fill="#E2E8F0"/>
+      <rect x="24" y="352" width="124" height="34" rx="8" fill="#0F172A"/>
+      <text x="86" y="374" font-size="13" font-weight="600" fill="#FFFFFF" text-anchor="middle">Add to cart</text>
+      <text x="24" y="424" font-size="13" font-weight="700" fill="#334155">Free returns?</text>
+      <rect x="24" y="436" width="190" height="8" rx="4" fill="#E2E8F0"/>
+      <rect x="24" y="452" width="170" height="8" rx="4" fill="#E2E8F0"/>
+      <rect x="24" y="468" width="120" height="8" rx="4" fill="#E2E8F0"/>
+      <rect x="24" y="500" width="196" height="8" rx="4" fill="#E2E8F0"/>
+      <rect x="24" y="516" width="150" height="8" rx="4" fill="#E2E8F0"/>
+
+      <!-- ============ widget ============ -->
+      <g transform="translate(240,54)">
+        <rect width="328" height="508" rx="16" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#shadow)"/>
+        <path d="M0 16 a16 16 0 0 1 16 -16 h296 a16 16 0 0 1 16 16 v40 h-328z" fill="#0F766E"/>
+        <circle cx="28" cy="28" r="14" fill="#FFFFFF" fill-opacity=".2"/>
+        <path d="M21 25 h14 M21 31 h9" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round"/>
+        <text x="52" y="25" font-size="15" font-weight="700" fill="#FFFFFF">Acme Support</text>
+        <text x="52" y="43" font-size="12" fill="#CCFBF1">Hi! Ask me anything about Acme.</text>
+        <circle class="pulse" cx="306" cy="28" r="4.5" fill="#6EE7B7"/>
+
+        <!-- visitor 1 -->
+        <g class="v1">
+          <rect x="106" y="72" width="206" height="52" rx="16" fill="#0F766E"/>
+          <text x="122" y="94" font-size="14" fill="#FFFFFF">Can I return boots I've</text>
+          <text x="122" y="112" font-size="14" fill="#FFFFFF">only worn once?</text>
+        </g>
+        <!-- typing 1 -->
+        <g class="t1">
+          <rect x="16" y="136" width="64" height="36" rx="16" fill="#F1F5F9"/>
+          <circle class="dot" cx="35" cy="154" r="3.5" fill="#64748B"/>
+          <circle class="dot d2" cx="48" cy="154" r="3.5" fill="#64748B"/>
+          <circle class="dot d3" cx="61" cy="154" r="3.5" fill="#64748B"/>
+        </g>
+        <!-- bot 1 -->
+        <g class="bo1">
+          <rect x="16" y="136" width="240" height="72" rx="16" fill="#F1F5F9"/>
+          <text x="30" y="158" font-size="14" fill="#0F172A">Yes! Lightly worn footwear</text>
+          <text x="30" y="176" font-size="14" fill="#0F172A">can be returned within 30</text>
+          <text x="30" y="194" font-size="14" fill="#0F172A">days for store credit.</text>
+        </g>
+        <!-- visitor 2 -->
+        <g class="v2">
+          <rect x="106" y="220" width="206" height="52" rx="16" fill="#0F766E"/>
+          <text x="122" y="242" font-size="14" fill="#FFFFFF">Can I get the refund on</text>
+          <text x="122" y="260" font-size="14" fill="#FFFFFF">my card instead?</text>
+        </g>
+        <!-- typing 2 -->
+        <g class="t2">
+          <rect x="16" y="284" width="64" height="36" rx="16" fill="#F1F5F9"/>
+          <circle class="dot" cx="35" cy="302" r="3.5" fill="#64748B"/>
+          <circle class="dot d2" cx="48" cy="302" r="3.5" fill="#64748B"/>
+          <circle class="dot d3" cx="61" cy="302" r="3.5" fill="#64748B"/>
+        </g>
+        <!-- bot 2 -->
+        <g class="bo2">
+          <rect x="16" y="284" width="240" height="72" rx="16" fill="#F1F5F9"/>
+          <text x="30" y="306" font-size="14" fill="#0F172A">Card refunds need a human's</text>
+          <text x="30" y="324" font-size="14" fill="#0F172A">OK. Leave your email and</text>
+          <text x="30" y="342" font-size="14" fill="#0F172A">our team will follow up.</text>
+        </g>
+
+        <!-- input bar -->
+        <g class="inp">
+          <rect x="16" y="452" width="296" height="40" rx="20" fill="#F8FAFC" stroke="#E2E8F0"/>
+          <text x="34" y="477" font-size="13" fill="#94A3B8">Type your question…</text>
+          <circle cx="292" cy="472" r="14" fill="#0F766E"/>
+          <path d="M286 472 h11 M292 466.5 l5.5 5.5 l-5.5 5.5" stroke="#FFFFFF" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </g>
+
+        <!-- lead capture -->
+        <g class="lead">
+          <rect x="16" y="372" width="296" height="124" rx="14" fill="#F0FDFA" stroke="#99F6E4"/>
+          <text x="30" y="396" font-size="14" font-weight="700" fill="#0F172A">Talk to a human</text>
+          <text x="30" y="414" font-size="12" fill="#475569">We'll email you. No need to wait here.</text>
+          <rect x="30" y="426" width="268" height="30" rx="8" fill="#FFFFFF" stroke="#CBD5E1"/>
+          <text x="40" y="446" font-size="13" fill="#0F172A">sam@example.com</text>
+          <g clip-path="url(#emailClip)">
+            <rect class="cover" x="38" y="428" width="220" height="26" fill="#FFFFFF"/>
+          </g>
+          <rect x="30" y="464" width="268" height="24" rx="8" fill="#0F766E"/>
+          <rect class="press" x="30" y="464" width="268" height="24" rx="8" fill="#022C22" fill-opacity=".45"/>
+          <text x="164" y="480.5" font-size="12.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">Send to the team</text>
+        </g>
+
+        <!-- success -->
+        <g class="ok">
+          <rect x="16" y="372" width="296" height="68" rx="14" fill="#ECFDF5" stroke="#6EE7B7"/>
+          <circle cx="44" cy="406" r="14" fill="#10B981"/>
+          <path d="M37.5 406 l4.5 4.5 l8.5 -9" stroke="#FFFFFF" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          <text x="68" y="401" font-size="14" font-weight="700" fill="#065F46">Got it! Ticket created.</text>
+          <text x="68" y="420" font-size="12" fill="#047857">A teammate will email you soon.</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- ============ behind the curtain ============ -->
+    <rect x="628" y="62" width="348" height="574" rx="16" fill="#FFFFFF" fill-opacity=".04" stroke="#FFFFFF" stroke-opacity=".1"/>
+    <text x="652" y="98" font-size="18" font-weight="700" fill="#F8FAFC">Behind the curtain</text>
+    <text x="652" y="120" font-size="13" fill="#94A3B8">What happens on the server</text>
+    <path d="M912 86 a9 9 0 1 0 9 12 a7 7 0 0 1 -9 -12z" fill="#FDE68A"/>
+    <text x="956" y="97" font-size="13" font-weight="600" fill="#FDE68A" text-anchor="end">2:14</text>
+
+    <!-- connectors -->
+    <g stroke="#334155" stroke-width="2">
+      <line x1="668" y1="186" x2="668" y2="226"/>
+      <line x1="668" y1="262" x2="668" y2="302"/>
+      <line x1="668" y1="338" x2="668" y2="378"/>
+      <line x1="668" y1="414" x2="668" y2="454"/>
+      <line x1="668" y1="490" x2="668" y2="530"/>
+    </g>
+
+    <!-- step 1 -->
+    <g transform="translate(652,150)">
+      <circle cx="16" cy="18" r="16" fill="#1E293B" stroke="#334155"/>
+      <text x="16" y="23" font-size="13" font-weight="700" fill="#64748B" text-anchor="middle">1</text>
+      <text x="46" y="15" font-size="14.5" font-weight="700" fill="#64748B">Visitor verified</text>
+      <text x="46" y="35" font-size="12.5" fill="#475569">Signed token + domain allowlist</text>
+      <g class="s1">
+        <circle cx="16" cy="18" r="22" fill="none" stroke="#10B981" stroke-opacity=".35" stroke-width="2"/>
+        <circle cx="16" cy="18" r="16" fill="#10B981"/>
+        <path d="M9.5 18 l4.5 4.5 l8.5 -9" stroke="#fff" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <text x="46" y="15" font-size="14.5" font-weight="700" fill="#F8FAFC">Visitor verified</text>
+        <text x="46" y="35" font-size="12.5" fill="#A5B4FC">Signed token + domain allowlist</text>
+        <line x1="16" y1="36" x2="16" y2="76" stroke="#10B981" stroke-width="2"/>
+      </g>
+    </g>
+    <!-- step 2 -->
+    <g transform="translate(652,226)">
+      <circle cx="16" cy="18" r="16" fill="#1E293B" stroke="#334155"/>
+      <text x="16" y="23" font-size="13" font-weight="700" fill="#64748B" text-anchor="middle">2</text>
+      <text x="46" y="15" font-size="14.5" font-weight="700" fill="#64748B">Knowledge base searched</text>
+      <text x="46" y="35" font-size="12.5" fill="#475569">Top 8 passages, this company only</text>
+      <g class="s2">
+        <circle cx="16" cy="18" r="22" fill="none" stroke="#10B981" stroke-opacity=".35" stroke-width="2"/>
+        <circle cx="16" cy="18" r="16" fill="#10B981"/>
+        <path d="M9.5 18 l4.5 4.5 l8.5 -9" stroke="#fff" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <text x="46" y="15" font-size="14.5" font-weight="700" fill="#F8FAFC">Knowledge base searched</text>
+        <text x="46" y="35" font-size="12.5" fill="#A5B4FC">Top 8 passages, this company only</text>
+        <line x1="16" y1="36" x2="16" y2="76" stroke="#10B981" stroke-width="2"/>
+      </g>
+    </g>
+    <!-- step 3 -->
+    <g transform="translate(652,302)">
+      <circle cx="16" cy="18" r="16" fill="#1E293B" stroke="#334155"/>
+      <text x="16" y="23" font-size="13" font-weight="700" fill="#64748B" text-anchor="middle">3</text>
+      <text x="46" y="15" font-size="14.5" font-weight="700" fill="#64748B">Answer streamed</text>
+      <text x="46" y="35" font-size="12.5" fill="#475569">Built only from those passages</text>
+      <g class="s3">
+        <circle cx="16" cy="18" r="22" fill="none" stroke="#10B981" stroke-opacity=".35" stroke-width="2"/>
+        <circle cx="16" cy="18" r="16" fill="#10B981"/>
+        <path d="M9.5 18 l4.5 4.5 l8.5 -9" stroke="#fff" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <text x="46" y="15" font-size="14.5" font-weight="700" fill="#F8FAFC">Answer streamed</text>
+        <text x="46" y="35" font-size="12.5" fill="#A5B4FC">Built only from those passages</text>
+        <line x1="16" y1="36" x2="16" y2="76" stroke="#10B981" stroke-width="2"/>
+      </g>
+    </g>
+    <!-- step 4 -->
+    <g transform="translate(652,378)">
+      <circle cx="16" cy="18" r="16" fill="#1E293B" stroke="#334155"/>
+      <text x="16" y="23" font-size="13" font-weight="700" fill="#64748B" text-anchor="middle">4</text>
+      <text x="46" y="15" font-size="14.5" font-weight="700" fill="#64748B">Sources recorded</text>
+      <text x="46" y="35" font-size="12.5" fill="#475569">Citations saved with the reply</text>
+      <g class="s4">
+        <circle cx="16" cy="18" r="22" fill="none" stroke="#10B981" stroke-opacity=".35" stroke-width="2"/>
+        <circle cx="16" cy="18" r="16" fill="#10B981"/>
+        <path d="M9.5 18 l4.5 4.5 l8.5 -9" stroke="#fff" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <text x="46" y="15" font-size="14.5" font-weight="700" fill="#F8FAFC">Sources recorded</text>
+        <text x="46" y="35" font-size="12.5" fill="#A5B4FC">Citations saved with the reply</text>
+        <line x1="16" y1="36" x2="16" y2="76" stroke="#F59E0B" stroke-width="2"/>
+      </g>
+    </g>
+    <!-- step 5 -->
+    <g transform="translate(652,454)">
+      <circle cx="16" cy="18" r="16" fill="#1E293B" stroke="#334155"/>
+      <text x="16" y="23" font-size="13" font-weight="700" fill="#64748B" text-anchor="middle">5</text>
+      <text x="46" y="15" font-size="14.5" font-weight="700" fill="#64748B">Hand-off triggered</text>
+      <text x="46" y="35" font-size="12.5" fill="#475569">Refunds are a human's call</text>
+      <g class="s5">
+        <circle cx="16" cy="18" r="22" fill="none" stroke="#F59E0B" stroke-opacity=".4" stroke-width="2"/>
+        <circle cx="16" cy="18" r="16" fill="#F59E0B"/>
+        <path d="M16 10 v10 M16 25 v.5" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <text x="46" y="15" font-size="14.5" font-weight="700" fill="#FDE68A">Hand-off triggered</text>
+        <text x="46" y="35" font-size="12.5" fill="#A5B4FC">Refunds are a human's call</text>
+        <line x1="16" y1="36" x2="16" y2="76" stroke="#10B981" stroke-width="2"/>
+      </g>
+    </g>
+    <!-- step 6 -->
+    <g transform="translate(652,530)">
+      <circle cx="16" cy="18" r="16" fill="#1E293B" stroke="#334155"/>
+      <text x="16" y="23" font-size="13" font-weight="700" fill="#64748B" text-anchor="middle">6</text>
+      <text x="46" y="15" font-size="14.5" font-weight="700" fill="#64748B">Ticket created</text>
+      <text x="46" y="35" font-size="12.5" fill="#475569">Email + full chat saved for the team</text>
+      <g class="s6">
+        <circle cx="16" cy="18" r="22" fill="none" stroke="#10B981" stroke-opacity=".35" stroke-width="2"/>
+        <circle cx="16" cy="18" r="16" fill="#10B981"/>
+        <path d="M9.5 18 l4.5 4.5 l8.5 -9" stroke="#fff" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <text x="46" y="15" font-size="14.5" font-weight="700" fill="#F8FAFC">Ticket created</text>
+        <text x="46" y="35" font-size="12.5" fill="#A5B4FC">Email + full chat saved for the team</text>
+      </g>
+    </g>
+
+    <!-- progress -->
+    <rect x="652" y="602" width="300" height="6" rx="3" fill="#1E293B"/>
+    <g clip-path="url(#progressClip)">
+      <rect class="prog" x="652" y="602" width="300" height="6" rx="3" fill="url(#bar)"/>
+    </g>
+  </g>
+</svg>

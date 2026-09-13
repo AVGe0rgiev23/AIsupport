@@ -43,5 +43,8 @@ next-env.d.ts
 .superpowers/
 .trigger/
 
+# saved session transcripts kept locally for reference, never committed
+phase3-lefttasks.txt
+
 .vercel
 .env*
