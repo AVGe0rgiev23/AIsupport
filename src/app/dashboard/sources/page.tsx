@@ -1,5 +1,8 @@
+import type { Metadata } from "next";
 import { ObjectId } from "mongodb";
 import { redirect } from "next/navigation";
+import { Badge, PageHeader } from "@/app/_ui/primitives";
+import { plural } from "../_lib/format";
 import { auth as triggerAuth } from "@trigger.dev/sdk";
 import { auth } from "@/auth";
 import { getDb } from "@/lib/db/client";
@@ -7,6 +10,7 @@ import { withOrg } from "@/lib/db/withOrg";
 import { SourcesPanel, type SerializedSource } from "./sources-panel";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = { title: "Knowledge sources" };
 
 export default async function SourcesPage() {
   const session = await auth();
@@ -42,19 +46,26 @@ export default async function SourcesPage() {
     expirationTime: "30m",
   });
 
+  const passages = serialized.reduce((sum, s) => sum + (s.chunkCount ?? 0), 0);
+
   return (
-    <main className="mx-auto max-w-3xl p-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Knowledge sources</h1>
-        <a href="/dashboard" className="text-sm text-gray-500 underline">
-          ← Dashboard
-        </a>
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        eyebrow="Knowledge"
+        title="Knowledge sources"
+        description="Everything the assistant can answer from. If it isn't here, it won't make it up."
+        actions={
+          <div className="flex gap-2">
+            <Badge tone="neutral">{plural(serialized.length, "source")}</Badge>
+            <Badge tone="info">{plural(passages, "passage")}</Badge>
+          </div>
+        }
+      />
       <SourcesPanel
         sources={serialized}
         orgTag={orgTag}
         publicAccessToken={publicAccessToken}
       />
-    </main>
+    </div>
   );
 }

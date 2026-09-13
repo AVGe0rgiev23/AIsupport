@@ -27,8 +27,7 @@ import {
   IconX,
   IconZap,
   LogoMark,
-} from "./_landing/icons";
-import "./_landing/landing.css";
+} from "./_ui/icons";
 
 export const metadata: Metadata = {
   title: "SupportAI · The support teammate that never sleeps",
@@ -46,7 +45,7 @@ const focusRing =
 
 export default function Home() {
   return (
-    <div className="landing-root flex-1 font-sans antialiased">
+    <div className="theme-night flex-1 font-sans antialiased">
       <Nav />
       <main>
         <Hero />
@@ -117,23 +116,23 @@ function Nav() {
 function Hero() {
   return (
     <section id="top" className="relative overflow-hidden">
-      <div className="landing-grid pointer-events-none absolute inset-0" />
-      <div className="landing-stars pointer-events-none absolute inset-0 opacity-70" />
-      <div className="landing-blob pointer-events-none absolute -left-32 top-24 size-[28rem] rounded-full bg-violet-600/30 blur-3xl" />
-      <div className="landing-blob-slow pointer-events-none absolute -right-24 -top-20 size-[30rem] rounded-full bg-cyan-500/20 blur-3xl" />
+      <div className="night-grid pointer-events-none absolute inset-0" />
+      <div className="night-stars pointer-events-none absolute inset-0 opacity-70" />
+      <div className="night-blob pointer-events-none absolute -left-32 top-24 size-[28rem] rounded-full bg-violet-600/30 blur-3xl" />
+      <div className="night-blob-slow pointer-events-none absolute -right-24 -top-20 size-[30rem] rounded-full bg-cyan-500/20 blur-3xl" />
 
       <div className="relative mx-auto grid max-w-[76rem] items-center gap-14 px-5 pb-24 pt-16 sm:px-8 lg:grid-cols-[1.05fr_1fr] lg:gap-10 lg:pb-32 lg:pt-24">
         <div>
           <p className="inline-flex items-center gap-2.5 rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-indigo-200">
             <span className="relative flex size-2">
-              <span className="landing-ping absolute inline-flex size-full rounded-full bg-emerald-400" />
+              <span className="night-ping absolute inline-flex size-full rounded-full bg-emerald-400" />
               <span className="relative inline-flex size-2 rounded-full bg-emerald-400" />
             </span>
             Online 24/7 · answers from your own docs
           </p>
 
           <h1 className="mt-6 text-balance text-5xl font-semibold leading-[1.02] tracking-[-0.035em] text-white sm:text-6xl lg:text-7xl">
-            The support teammate that <span className="landing-gradient-text">never sleeps.</span>
+            The support teammate that <span className="night-gradient-text">never sleeps.</span>
           </h1>
 
           <p className="mt-6 max-w-xl text-pretty text-lg leading-relaxed text-slate-400">
@@ -383,7 +382,7 @@ function Features() {
 function TryIt() {
   return (
     <section id="try-it" className="relative scroll-mt-20 overflow-hidden border-t border-white/5 px-5 py-24 sm:px-8 lg:py-32">
-      <div className="landing-blob pointer-events-none absolute left-1/2 top-10 size-[36rem] -translate-x-1/2 rounded-full bg-violet-700/15 blur-3xl" />
+      <div className="night-blob pointer-events-none absolute left-1/2 top-10 size-[36rem] -translate-x-1/2 rounded-full bg-violet-700/15 blur-3xl" />
       <div className="relative mx-auto max-w-6xl">
         <SectionHeading eyebrow="A quick game" title="Would it answer this?">
           Six things a customer might type. Guess what SupportAI does, then see if you were right.
@@ -629,8 +628,8 @@ function FinalCta() {
   return (
     <section className="px-5 pb-24 sm:px-8 lg:pb-32">
       <div className="relative mx-auto max-w-6xl overflow-hidden rounded-[2rem] border border-white/10 bg-linear-to-br from-[#16123f] via-[#0d1330] to-[#062a3a] px-6 py-16 text-center sm:px-12 lg:py-20">
-        <div className="landing-stars pointer-events-none absolute inset-0 opacity-80" />
-        <div className="landing-blob pointer-events-none absolute -bottom-40 left-1/2 size-[30rem] -translate-x-1/2 rounded-full bg-violet-600/30 blur-3xl" />
+        <div className="night-stars pointer-events-none absolute inset-0 opacity-80" />
+        <div className="night-blob pointer-events-none absolute -bottom-40 left-1/2 size-[30rem] -translate-x-1/2 rounded-full bg-violet-600/30 blur-3xl" />
         <div className="relative">
           <IconMoon className="mx-auto size-10 text-amber-200" />
           <h2 className="mx-auto mt-6 max-w-2xl text-balance text-4xl font-semibold tracking-[-0.03em] text-white sm:text-5xl">

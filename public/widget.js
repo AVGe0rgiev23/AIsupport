@@ -12,7 +12,9 @@
   iframe.title = "Support chat";
   iframe.style.cssText =
     "position:fixed;bottom:20px;right:20px;width:380px;height:560px;" +
-    "border:none;border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,0.15);" +
+    "max-width:calc(100vw - 40px);max-height:calc(100vh - 40px);" +
+    "border:none;border-radius:18px;background:#fff;" +
+    "box-shadow:0 24px 60px -12px rgba(15,23,42,0.35),0 0 0 1px rgba(15,23,42,0.06);" +
     "z-index:2147483000;color-scheme:light;";
 
   // Position is set server-side from Organization.widgetConfig, communicated

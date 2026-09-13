@@ -2,6 +2,9 @@
 
 import { useActionState } from "react";
 import { updateAllowedDomainsAction, type SettingsActionState } from "@/app/actions/settings";
+import { IconAlert, IconCheck } from "@/app/_ui/icons";
+import { Badge, buttonStyles, Callout, Field, inputStyles } from "@/app/_ui/primitives";
+import { Spinner } from "@/app/_ui/submit-button";
 
 const initialState: SettingsActionState = {};
 
@@ -9,24 +12,43 @@ export function SettingsForm({ currentDomains }: { currentDomains: string[] }) {
   const [state, formAction, pending] = useActionState(updateAllowedDomainsAction, initialState);
 
   return (
-    <form action={formAction} className="space-y-2">
-      <label className="block text-sm font-medium">Allowed widget domains</label>
-      <input
-        name="allowedDomains"
-        defaultValue={currentDomains.join(", ")}
-        placeholder="acme.com, help.acme.com"
-        className="w-full rounded border border-gray-300 p-2"
-      />
-      <p className="text-xs text-gray-500">Comma-separated hostnames. Subdomains are allowed automatically.</p>
-      {state.error && <p className="text-sm text-red-600">{state.error}</p>}
-      {state.ok && <p className="text-sm text-green-600">Saved.</p>}
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded bg-indigo-600 px-4 py-2 text-white disabled:opacity-50"
+    <form action={formAction} className="space-y-4">
+      <div className="flex flex-wrap gap-2">
+        {currentDomains.map((d) => (
+          <Badge key={d} tone={d === "localhost" ? "neutral" : "info"} dot={d !== "localhost"}>
+            {d}
+          </Badge>
+        ))}
+      </div>
+      <Field
+        label="Domains"
+        htmlFor="allowedDomains"
+        hint="Comma-separated hostnames, like acme.com. Subdomains are allowed automatically. Keep localhost while you test."
       >
-        Save
-      </button>
+        <input
+          id="allowedDomains"
+          name="allowedDomains"
+          defaultValue={currentDomains.join(", ")}
+          placeholder="acme.com, help.acme.com"
+          className={`${inputStyles} font-mono text-sm`}
+        />
+      </Field>
+      {state.error && (
+        <Callout tone="danger" icon={IconAlert}>
+          {state.error}
+        </Callout>
+      )}
+      {state.ok && (
+        <Callout tone="success" icon={IconCheck}>
+          Saved. The widget now loads on these domains.
+        </Callout>
+      )}
+      <div className="flex justify-end">
+        <button type="submit" disabled={pending} className={buttonStyles("primary")}>
+          {pending && <Spinner />}
+          {pending ? "Saving…" : "Save domains"}
+        </button>
+      </div>
     </form>
   );
 }

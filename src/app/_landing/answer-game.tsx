@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { IconCheck, IconX } from "./icons";
+import { IconCheck, IconX } from "../_ui/icons";
 
 type Verdict = "answer" | "human" | "refuse";
 
@@ -129,7 +129,7 @@ export function AnswerGame() {
                   })}
                 </div>
                 {pick !== null && (
-                  <p className="landing-pop mt-4 text-sm leading-relaxed text-slate-300">
+                  <p className="night-pop mt-4 text-sm leading-relaxed text-slate-300">
                     <span className={`font-semibold ${correct ? "text-emerald-300" : "text-rose-300"}`}>
                       {correct ? "Correct. " : "Not quite. "}
                     </span>
@@ -143,7 +143,7 @@ export function AnswerGame() {
       </div>
 
       {done && (
-        <div className="landing-pop mt-6 flex flex-col items-center justify-between gap-4 rounded-2xl border border-violet-400/30 bg-linear-to-r from-cyan-400/10 via-violet-400/10 to-pink-400/10 px-6 py-5 text-center sm:flex-row sm:text-left">
+        <div className="night-pop mt-6 flex flex-col items-center justify-between gap-4 rounded-2xl border border-violet-400/30 bg-linear-to-r from-cyan-400/10 via-violet-400/10 to-pink-400/10 px-6 py-5 text-center sm:flex-row sm:text-left">
           <div>
             <p className="text-lg font-semibold text-white">
               {score} / {ROUNDS.length}: {result.title}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useEffectEvent, useRef, useState } from "react";
-import { IconCheck, IconShield } from "./icons";
+import { IconCheck, IconShield } from "../_ui/icons";
 
 type Outcome = "answer" | "handoff" | "refuse";
 
@@ -152,7 +152,7 @@ export function HeroDemo() {
             <p className="text-xs text-teal-100">Hi! Ask me anything about Acme.</p>
           </div>
           <span className="relative flex size-2.5">
-            <span className="landing-ping absolute inline-flex size-full rounded-full bg-emerald-300" />
+            <span className="night-ping absolute inline-flex size-full rounded-full bg-emerald-300" />
             <span className="relative inline-flex size-2.5 rounded-full bg-emerald-300" />
           </span>
         </div>
@@ -169,13 +169,13 @@ export function HeroDemo() {
           )}
           {messages.map((m) =>
             m.from === "visitor" ? (
-              <div key={m.id} className="landing-pop flex justify-end">
+              <div key={m.id} className="night-pop flex justify-end">
                 <p className="max-w-[80%] rounded-2xl rounded-br-md bg-teal-700 px-4 py-2.5 text-white">
                   {m.text}
                 </p>
               </div>
             ) : (
-              <div key={m.id} className="landing-pop flex justify-start">
+              <div key={m.id} className="night-pop flex justify-start">
                 <p className="max-w-[85%] rounded-2xl rounded-bl-md bg-slate-100 px-4 py-2.5 text-slate-800">
                   {m.text || " "}
                 </p>
@@ -183,17 +183,17 @@ export function HeroDemo() {
             ),
           )}
           {typing && (
-            <div className="landing-pop flex">
+            <div className="night-pop flex">
               <span className="flex gap-1.5 rounded-2xl rounded-bl-md bg-slate-100 px-4 py-3.5">
-                <span className="landing-dot size-1.5 rounded-full bg-slate-500" />
-                <span className="landing-dot size-1.5 rounded-full bg-slate-500 [animation-delay:.15s]" />
-                <span className="landing-dot size-1.5 rounded-full bg-slate-500 [animation-delay:.3s]" />
+                <span className="night-dot size-1.5 rounded-full bg-slate-500" />
+                <span className="night-dot size-1.5 rounded-full bg-slate-500 [animation-delay:.15s]" />
+                <span className="night-dot size-1.5 rounded-full bg-slate-500 [animation-delay:.3s]" />
               </span>
             </div>
           )}
           {phase === "lead" && (
             <form
-              className="landing-pop rounded-2xl border border-teal-200 bg-teal-50 p-4"
+              className="night-pop rounded-2xl border border-teal-200 bg-teal-50 p-4"
               onSubmit={(e) => {
                 e.preventDefault();
                 setPhase("ticket");
@@ -220,7 +220,7 @@ export function HeroDemo() {
             </form>
           )}
           {phase === "ticket" && (
-            <div className="landing-pop flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+            <div className="night-pop flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
               <span className="grid size-8 shrink-0 place-items-center rounded-full bg-emerald-500 text-white">
                 <IconCheck className="size-4" strokeWidth={2.5} />
               </span>

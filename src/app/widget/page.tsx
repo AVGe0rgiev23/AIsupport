@@ -3,6 +3,7 @@ import { getDb } from "@/lib/db/client";
 import { verifySiteKey } from "@/lib/siteKeys";
 import { mintWidgetToken } from "@/lib/widgetToken";
 import type { Organization } from "@/lib/db/types";
+import { IconLock } from "@/app/_ui/icons";
 import { ChatWidget } from "./chat-widget";
 
 function realOrigin(hdrs: Headers): string | null {
@@ -19,8 +20,12 @@ function realOrigin(hdrs: Headers): string | null {
 
 function UnauthorizedWidget({ reason }: { reason: string }) {
   return (
-    <div style={{ padding: 16, fontFamily: "sans-serif", fontSize: 14, color: "#6b7280" }}>
-      {reason}
+    <div className="flex h-dvh flex-col items-center justify-center bg-white px-8 text-center font-sans">
+      <span className="grid size-11 place-items-center rounded-full bg-slate-100 text-slate-400">
+        <IconLock className="size-5" />
+      </span>
+      <p className="mt-4 text-sm font-medium text-slate-700">Chat is unavailable here</p>
+      <p className="mt-1 text-[13px] text-slate-500">{reason}</p>
     </div>
   );
 }
@@ -46,6 +51,7 @@ export default async function WidgetPage({
   return (
     <ChatWidget
       widgetToken={result.widgetToken}
+      orgName={result.orgName}
       primaryColor={result.primaryColor}
       greeting={result.greeting}
       position={result.position}
@@ -57,6 +63,7 @@ type AuthorizeResult =
   | {
       ok: true;
       widgetToken: string;
+      orgName: string;
       primaryColor: string;
       greeting: string;
       position: "bottom-right" | "bottom-left";
@@ -107,6 +114,7 @@ async function authorize(siteKey: string, origin: string): Promise<AuthorizeResu
     return {
       ok: true,
       widgetToken,
+      orgName: org.name,
       primaryColor: org.widgetConfig.primaryColor,
       greeting: org.widgetConfig.greeting,
       position: org.widgetConfig.position,

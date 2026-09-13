@@ -1,17 +1,36 @@
-/* Landing-page-only styles. Everything is namespaced under .landing-root or a
-   landing- prefix so the dashboard and widget stay untouched. */
+/* "Night shift" theme shared by the landing page, auth screens and dashboard.
+   Everything is namespaced under .theme-night or a night- prefix, so the
+   embeddable chat widget (which must stay light and brand-coloured inside a
+   customer's site) is untouched. */
 
-html:has(.landing-root) {
+html:has(.theme-night) {
   scroll-behavior: smooth;
   background-color: #070b1a;
+  /* native controls (select menus, file pickers, scrollbars) render dark */
+  color-scheme: dark;
 }
 
-.landing-root {
+.theme-night {
   background-color: #070b1a;
   color: #cbd5e1;
 }
 
-.landing-stars {
+.theme-night ::selection {
+  background: rgba(167, 139, 250, 0.35);
+  color: #fff;
+}
+
+@keyframes night-shimmer {
+  from { background-position: -400px 0; }
+  to { background-position: 400px 0; }
+}
+.night-skeleton {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.09) 50%, rgba(255, 255, 255, 0.04) 100%);
+  background-size: 800px 100%;
+  animation: night-shimmer 1.6s linear infinite;
+}
+
+.night-stars {
   background-image:
     radial-gradient(1px 1px at 24px 36px, rgba(224, 231, 255, 0.55), transparent),
     radial-gradient(1px 1px at 120px 180px, rgba(224, 231, 255, 0.35), transparent),
@@ -21,7 +40,7 @@ html:has(.landing-root) {
   background-size: 340px 340px;
 }
 
-.landing-grid {
+.night-grid {
   background-image:
     linear-gradient(rgba(148, 163, 184, 0.07) 1px, transparent 1px),
     linear-gradient(90deg, rgba(148, 163, 184, 0.07) 1px, transparent 1px);
@@ -29,49 +48,49 @@ html:has(.landing-root) {
   mask-image: radial-gradient(ellipse at 50% 0%, #000 20%, transparent 70%);
 }
 
-@keyframes landing-drift {
+@keyframes night-drift {
   0%, 100% { transform: translate3d(0, 0, 0); }
   50% { transform: translate3d(48px, -32px, 0); }
 }
-.landing-blob { animation: landing-drift 18s ease-in-out infinite; }
-.landing-blob-slow { animation: landing-drift 26s ease-in-out infinite reverse; }
+.night-blob { animation: night-drift 18s ease-in-out infinite; }
+.night-blob-slow { animation: night-drift 26s ease-in-out infinite reverse; }
 
-@keyframes landing-gradient {
+@keyframes night-gradient {
   0%, 100% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
 }
-.landing-gradient-text {
+.night-gradient-text {
   background-image: linear-gradient(90deg, #22d3ee, #a78bfa, #f472b6, #22d3ee);
   background-size: 300% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: landing-gradient 9s ease-in-out infinite;
+  animation: night-gradient 9s ease-in-out infinite;
 }
 
-@keyframes landing-pop {
+@keyframes night-pop {
   from { opacity: 0; transform: translateY(8px) scale(0.98); }
   to { opacity: 1; transform: none; }
 }
-.landing-pop { animation: landing-pop 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.night-pop { animation: night-pop 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
 
-@keyframes landing-bounce {
+@keyframes night-bounce {
   0%, 60%, 100% { transform: translateY(0); opacity: 0.45; }
   30% { transform: translateY(-3px); opacity: 1; }
 }
-.landing-dot { animation: landing-bounce 1s ease-in-out infinite; }
+.night-dot { animation: night-bounce 1s ease-in-out infinite; }
 
-@keyframes landing-ping {
+@keyframes night-ping {
   0% { transform: scale(1); opacity: 0.7; }
   80%, 100% { transform: scale(2.4); opacity: 0; }
 }
-.landing-ping { animation: landing-ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite; }
+.night-ping { animation: night-ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite; }
 
 @media (prefers-reduced-motion: reduce) {
-  html:has(.landing-root) { scroll-behavior: auto; }
-  .landing-root *,
-  .landing-root *::before,
-  .landing-root *::after {
+  html:has(.theme-night) { scroll-behavior: auto; }
+  .theme-night *,
+  .theme-night *::before,
+  .theme-night *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
