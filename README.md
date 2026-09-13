@@ -6,6 +6,8 @@
 
 <br/><br/>
 
+<a href="https://supportai-beta.vercel.app"><img src="https://img.shields.io/badge/see_it_live-supportai--beta.vercel.app-0F766E?style=for-the-badge&logo=vercel&logoColor=white" alt="See it live at supportai-beta.vercel.app"></a>
+<br/>
 <img src="https://img.shields.io/badge/Next.js-16-000000?style=for-the-badge&logo=nextdotjs&logoColor=white" alt="Next.js 16">
 <img src="https://img.shields.io/badge/React-19-149ECA?style=for-the-badge&logo=react&logoColor=white" alt="React 19">
 <img src="https://img.shields.io/badge/TypeScript-strict-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript">
@@ -20,6 +22,7 @@
 
 <a href="#the-60-second-version"><b>What is this?</b></a> &nbsp;·&nbsp;
 <a href="#see-it-in-action"><b>Demo</b></a> &nbsp;·&nbsp;
+<a href="#a-look-inside"><b>Screenshots</b></a> &nbsp;·&nbsp;
 <a href="#would-it-answer-this"><b>Play the game</b></a> &nbsp;·&nbsp;
 <a href="#features"><b>Features</b></a> &nbsp;·&nbsp;
 <a href="#under-the-hood"><b>Architecture</b></a> &nbsp;·&nbsp;
@@ -37,6 +40,7 @@
 | 🧑‍💼 **A business owner**, or just curious | [The 60-second version](#the-60-second-version) → [Would it answer this?](#would-it-answer-this) | ☕ 3 min |
 | 👩‍💻 **A developer** | [Under the hood](#under-the-hood) → [Quick start](#quick-start) | 🍕 10 min |
 | 🔐 **Security-minded** | [Built like a vault](#built-like-a-vault) | 🛡️ 4 min |
+| 👀 **Just browsing** | [A look inside](#a-look-inside) → [the live site](https://supportai-beta.vercel.app) | ⚡ 1 min |
 
 <br/>
 
@@ -100,6 +104,70 @@
 <img src=".github/assets/chat-demo.svg" alt="Animated demo: a shopper asks about returning worn boots and gets an answer from the store's policy, then asks for a card refund. The bot hands that off to a human by collecting their email and creating a ticket, while a side panel lights up each step on the server." width="100%">
 <br/>
 <sub>🎨 An illustrated replay of the real flow. On a live site, the widget uses each company's own brand colour and greeting.</sub>
+</div>
+
+<br/>
+
+<a id="a-look-inside"></a>
+
+## 📸 A look inside
+
+Real screenshots of the app, filled with sample data. *Acme Outdoor is a made-up store.*
+
+<div align="center">
+<img src=".github/assets/screenshots/dashboard-overview.png" alt="SupportAI dashboard overview: stat cards for knowledge sources, passages, conversations and hand-offs, a completed four-step setup checklist, today's AI budget meter, allowed domains and recent hand-offs" width="100%">
+<br/>
+<sub><b>Overview:</b> the numbers that matter, a setup checklist that ticks itself off, today's AI budget and the latest hand-offs.</sub>
+</div>
+
+<br/>
+
+<table>
+<tr>
+<td width="50%" valign="top">
+<img src=".github/assets/screenshots/dashboard-knowledge.png" alt="Knowledge sources page with tabs to upload a document, crawl a website or import tickets, and a list of sources with Processing, Failed and Ready statuses">
+<br/>
+<sub><b>Knowledge:</b> upload a doc, crawl a site or import tickets, then watch each one go from queued to ready.</sub>
+</td>
+<td width="50%" valign="top">
+<img src=".github/assets/screenshots/dashboard-widget.png" alt="Widget settings page with the install snippet and copy button, allowed domains, and a preview of the chat widget in the company's brand colour">
+<br/>
+<sub><b>Widget:</b> copy the one-line install, approve your domains and preview your brand colour.</sub>
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+<img src=".github/assets/screenshots/landing.png" alt="SupportAI landing page with the headline 'The support teammate that never sleeps' and an interactive chat demo">
+<br/>
+<sub><b>Landing page:</b> an interactive demo, the "Would it answer this?" game and plain-English FAQs.</sub>
+</td>
+<td width="50%" valign="top">
+<img src=".github/assets/screenshots/sign-in.png" alt="Sign-in page on a starry background asking for an email to send a magic link">
+<br/>
+<sub><b>Sign-in:</b> passwordless magic links. No password to forget.</sub>
+</td>
+</tr>
+</table>
+
+<div align="center">
+
+**💬 What your visitors see**
+
+<table>
+<tr>
+<td align="center" width="50%">
+<img src=".github/assets/screenshots/widget-chat.png" alt="The chat widget in Acme Outdoor's teal brand colour, greeting the visitor with a question typed and ready to send" width="280">
+<br/>
+<sub>Your name, your colour, your greeting</sub>
+</td>
+<td align="center" width="50%">
+<img src=".github/assets/screenshots/widget-handoff.png" alt="The chat widget confirming a hand-off: a person from the team will follow up by email" width="280">
+<br/>
+<sub>A person takes it from here</sub>
+</td>
+</tr>
+</table>
+
 </div>
 
 <br/>
@@ -286,7 +354,27 @@ Watch uploads, crawls and imports get processed in real time with Trigger.dev Re
 <td valign="top">
 
 ### 🎨 Branded, isolated widget
-Each company's own colour, greeting and left/right position. It runs in an iframe, so it never clashes with your site's styles.
+Each company's own colour, greeting and left/right position, with text that stays readable on any brand colour. It runs in an iframe, so it never clashes with your site's styles.
+
+</td>
+</tr>
+<tr>
+<td valign="top">
+
+### 🧭 Guided setup
+A four-step checklist on the Overview takes a new company from zero to live, and ticks itself off as each step is done.
+
+</td>
+<td valign="top">
+
+### 📈 Everything at a glance
+Sources, passages, conversations, hand-offs and today's AI budget on one screen, with a switcher for every company you manage.
+
+</td>
+<td valign="top">
+
+### 📱 Built for every screen
+Responsive from phone to widescreen, keyboard-friendly, and calmer for anyone who prefers reduced motion.
 
 </td>
 </tr>
@@ -332,7 +420,8 @@ The chat widget is a public, anonymous endpoint on the open internet, so it was 
 
 | Layer | Technology | Its job |
 |:--|:--|:--|
-| 🖥️ App and chat API | **Next.js 16** (App Router) on **Vercel** | Dashboard, widget page, streaming `/api/chat`: anything a visitor is waiting on |
+| 🖥️ App and chat API | **Next.js 16** (App Router) on **Vercel** | Landing page, dashboard, widget page, streaming `/api/chat`: anything a visitor is waiting on |
+| 🎨 Interface | **Tailwind CSS 4** + a small in-house design system | The "night shift" theme shared by every screen, with no UI library to drag along |
 | ⚙️ Background jobs | **Trigger.dev v4** | Parsing, crawling, embedding and scheduled re-crawls: anything slow, retryable or scheduled |
 | 🗄️ Database | **MongoDB Atlas** + **Vector Search** | App data *and* 768-dimension embeddings in one place |
 | 🧠 AI layer | **Vercel AI SDK 5** | One provider abstraction: `gemini-3.5-flash` primary, `llama-3.3-70b-versatile` on Groq as fallback |
@@ -433,6 +522,7 @@ sequenceDiagram
 
 ```text
 supportai/
+├── .github/assets/                # README graphics and screenshots
 ├── public/
 │   └── widget.js                  # the one-line embed loader (plain JS, mounts the iframe)
 ├── scripts/
@@ -440,10 +530,14 @@ supportai/
 │   └── verify-vector-search.ts    # npm run db:verify-vector: live search + tenant-isolation proof
 ├── src/
 │   ├── app/
-│   │   ├── api/chat/              # streaming RAG endpoint + /escalate
-│   │   ├── dashboard/             # org home, knowledge sources, widget settings
+│   │   ├── page.tsx               # landing page
+│   │   ├── _landing/              # landing pieces: interactive hero demo, answer game, snippet
+│   │   ├── _ui/                   # design system: primitives, icons, night theme, auth shell
+│   │   ├── signin/, check-email/  # passwordless sign-in screens
 │   │   ├── onboarding/            # create an organization, get a site key
+│   │   ├── dashboard/             # app shell (sidebar, org switcher) + overview, knowledge, widget
 │   │   ├── widget/                # server-verified widget page + chat UI
+│   │   ├── api/chat/              # streaming RAG endpoint + /escalate
 │   │   └── actions/               # server actions: orgs, sources, settings
 │   ├── lib/
 │   │   ├── ai/                    # provider switch, fallback streaming, embeddings, PDF OCR
@@ -552,11 +646,12 @@ npm run dev
 
 ### 5. Take it for a spin 🏎️
 
-1. Open **http://localhost:3000/signin** and request a magic link.
+1. Open **http://localhost:3000**, click **Get started** and request a magic link.
 2. **Create your organization.** Copy the site key (`pk_…`) right away: it's shown **only once** and stored as a hash.
-3. Open **Knowledge sources**: upload a PDF, crawl your help center, or import old tickets, then watch the live status tick along.
-4. In **Settings**, add the domains allowed to host the widget (`localhost` is allowed by default).
-5. Paste the snippet into any page on an approved domain:
+3. The **Overview** shows a *Get set up* checklist. Follow it:
+   - **Knowledge:** upload a PDF, crawl your help center or import old tickets, then watch the live status tick along.
+   - **Widget:** add the domains allowed to host the widget (`localhost` is allowed by default) and copy the snippet.
+4. Paste the snippet into any page on an approved domain:
 
 ```html
 <script src="http://localhost:3000/widget.js" data-site-key="pk_your_site_key"></script>
@@ -629,10 +724,12 @@ Tests run against an in-memory MongoDB and fake AI models injected as dependenci
 | **1 · Accounts & companies** | Magic-link sign-in, organizations, memberships, public site keys | ✅&nbsp;Shipped |
 | **2 · Knowledge intake** | Uploads, website crawling, ticket import, live status, scheduled re-crawls | ✅&nbsp;Shipped |
 | **3 · The chat widget** | Streaming grounded chat, provider fallback, human hand-off, abuse controls | ✅&nbsp;Shipped |
-| **4 · Team inbox** | Ticket inbox with full transcripts, email notifications, replying from the dashboard | 🔜 Next |
-| **5 · Email channel** | Grounded AI replies to inbound support emails, as drafts or auto-sent | 📋 Planned |
-| **6 · Self-writing knowledge base** | Drafts help articles from resolved chats; a human approves before they go live | 📋 Planned |
-| **7 · Polish** | Analytics, deflection rate, quota dashboard, end-to-end tests, 5-minute onboarding | 📋 Planned |
+| **4 · Team inbox** | Ticket inbox with full transcripts, email notifications, replying from the dashboard | 🔜&nbsp;Next |
+| **5 · Email channel** | Grounded AI replies to inbound support emails, as drafts or auto-sent | 📋&nbsp;Planned |
+| **6 · Self-writing knowledge base** | Drafts help articles from resolved chats; a human approves before they go live | 📋&nbsp;Planned |
+| **7 · Polish** | Analytics, deflection rate, quota dashboard, end-to-end tests, 5-minute onboarding | 📋&nbsp;Planned |
+
+**Also shipped:** a full redesign of the landing page, sign-in, onboarding, dashboard and chat widget. [Take a look](#a-look-inside).
 
 <details>
 <summary><b>🔮 Further out</b></summary>
