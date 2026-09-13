@@ -16,7 +16,7 @@
 <img src="https://img.shields.io/badge/tests-162_passing-22C55E?style=for-the-badge&logo=vitest&logoColor=white" alt="162 tests passing">
 <img src="https://img.shields.io/badge/monthly_bill-%240-F472B6?style=for-the-badge" alt="Monthly bill: $0">
 
-<h3>Paste one snippet on your website and get a support agent that has read all your help docs,<br/>answers customers in seconds at 3&nbsp;AM, and says <i>"let me get a human"</i> the moment it isn't sure.</h3>
+<h3>Paste one snippet on your website and get a support agent that has read all your help docs, answers customers in seconds at 3&nbsp;AM, and says <i>"let me get a human"</i> the moment it isn't sure.</h3>
 
 <a href="#the-60-second-version"><b>What is this?</b></a> &nbsp;·&nbsp;
 <a href="#see-it-in-action"><b>Demo</b></a> &nbsp;·&nbsp;
@@ -621,16 +621,14 @@ Tests run against an in-memory MongoDB and fake AI models injected as dependenci
 
 ## 🗺️ Roadmap
 
-```text
-███████████████░░░░░░░░░░░░░░░  4 of 8 phases shipped
-```
+<img src=".github/assets/progress.svg" alt="Roadmap progress: 4 of 8 phases shipped, Phase 4 (team inbox) is next" width="100%">
 
 | Phase | What it unlocks | Status |
 |:--|:--|:--:|
-| **0 · Foundations** | Next.js, Trigger.dev, Atlas and both AI providers wired together | ✅ Shipped |
-| **1 · Accounts & companies** | Magic-link sign-in, organizations, memberships, public site keys | ✅ Shipped |
-| **2 · Knowledge intake** | Uploads, website crawling, ticket import, live status, scheduled re-crawls | ✅ Shipped |
-| **3 · The chat widget** | Streaming grounded chat, provider fallback, human hand-off, abuse controls | ✅ Shipped |
+| **0 · Foundations** | Next.js, Trigger.dev, Atlas and both AI providers wired together | ✅&nbsp;Shipped |
+| **1 · Accounts & companies** | Magic-link sign-in, organizations, memberships, public site keys | ✅&nbsp;Shipped |
+| **2 · Knowledge intake** | Uploads, website crawling, ticket import, live status, scheduled re-crawls | ✅&nbsp;Shipped |
+| **3 · The chat widget** | Streaming grounded chat, provider fallback, human hand-off, abuse controls | ✅&nbsp;Shipped |
 | **4 · Team inbox** | Ticket inbox with full transcripts, email notifications, replying from the dashboard | 🔜 Next |
 | **5 · Email channel** | Grounded AI replies to inbound support emails, as drafts or auto-sent | 📋 Planned |
 | **6 · Self-writing knowledge base** | Drafts help articles from resolved chats; a human approves before they go live | 📋 Planned |
