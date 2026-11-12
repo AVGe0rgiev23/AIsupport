@@ -9,8 +9,10 @@ import {
   contentHash,
   extractLinks,
   extractMainContent,
+  noTextMessage,
   normalizeUrl,
   parseSitemap,
+  prioritizeUrls,
 } from "@/lib/ingest/crawl";
 import { ingestion } from "./queues";
 
@@ -79,7 +81,11 @@ export const crawlWebsite = schemaTask({
         })
       : [];
     if (sitemapUrls.length > 0) {
-      queue = sitemapUrls.slice(0, maxPages).map((u) => ({ url: normalizeUrl(u), depth: 0 }));
+      // Main pages first: a sitemap can list 100+ URLs (istra-luxe.bg has 125,
+      // mostly project pages with no text), and only maxPages get read.
+      queue = prioritizeUrls(sitemapUrls)
+        .slice(0, maxPages)
+        .map((u) => ({ url: normalizeUrl(u), depth: 0 }));
     } else {
       queue = [{ url: rootUrl, depth: 0 }];
     }
@@ -157,10 +163,14 @@ export const crawlWebsite = schemaTask({
     const chunkCount = await orgDb.countDocuments("chunks", {
       documentId: { $in: (await orgDb.find("documents", { sourceId }).toArray()).map((d) => d._id) },
     });
+    // "Ready" with nothing indexed looked like success while the assistant knew
+    // nothing, so every answer became a hand-off. Say what went wrong instead.
     await orgDb.updateOne(
       "sources",
       { _id: sourceId },
-      { $set: { status: "ready", lastSyncedAt: new Date(), chunkCount, errorMessage: null } },
+      chunkCount > 0
+        ? { $set: { status: "ready", lastSyncedAt: new Date(), chunkCount, errorMessage: null } }
+        : { $set: { status: "error", lastSyncedAt: new Date(), chunkCount, errorMessage: noTextMessage(crawled) } },
     );
     return { crawled, changed: changedPages.length, unchanged, chunkCount };
   },

@@ -1,6 +1,6 @@
 import { ObjectId } from "mongodb";
 import { describe, expect, it } from "vitest";
-import { formatChunks, recentHistory } from "@/lib/chat/prompt";
+import { buildSystemPrompt, formatChunks, recentHistory } from "@/lib/chat/prompt";
 import type { ScoredChunk } from "@/lib/db/vectorSearch";
 import type { Message } from "@/lib/db/types";
 
@@ -116,5 +116,20 @@ describe("recentHistory", () => {
     expect(out).toHaveLength(10);
     expect(out[0].content).toBe("m5");
     expect(out[9].content).toBe("m14");
+  });
+});
+
+describe("buildSystemPrompt", () => {
+  it("answers in the visitor's language, including Bulgarian typed in Latin letters", () => {
+    const p = buildSystemPrompt("friendly");
+    expect(p).toMatch(/language of the visitor's latest message/);
+    expect(p).toMatch(/Bulgarian typed in Latin letters/);
+  });
+
+  it("doesn't hand off questions the documents answer, and prices aren't billing", () => {
+    const p = buildSystemPrompt("friendly");
+    expect(p).not.toMatch(/not confident/);
+    expect(p).toMatch(/prices, hours or locations are NOT billing/);
+    expect(p).toMatch(/Never invent facts/);
   });
 });

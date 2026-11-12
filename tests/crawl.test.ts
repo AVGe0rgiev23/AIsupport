@@ -3,8 +3,10 @@ import {
   contentHash,
   extractLinks,
   extractMainContent,
+  noTextMessage,
   normalizeUrl,
   parseSitemap,
+  prioritizeUrls,
 } from "@/lib/ingest/crawl";
 
 const page = `
@@ -70,5 +72,33 @@ describe("contentHash", () => {
     expect(contentHash("abc")).toBe(contentHash("abc"));
     expect(contentHash("abc")).not.toBe(contentHash("abd"));
     expect(contentHash("abc")).toMatch(/^[a-f0-9]{64}$/);
+  });
+});
+
+describe("prioritizeUrls", () => {
+  it("puts the home page and top-level pages before deep ones, keeping sitemap order otherwise", () => {
+    const urls = [
+      "https://istra-luxe.bg/projects/hotel-palms-beach-kiten",
+      "https://istra-luxe.bg/",
+      "https://istra-luxe.bg/products/aluminium-railings/aluminievi-parapeti-sys-struni",
+      "https://istra-luxe.bg/services",
+      "https://istra-luxe.bg/contacts",
+      "https://istra-luxe.bg/projects/ironcode-varna",
+    ];
+    expect(prioritizeUrls(urls)).toEqual([
+      "https://istra-luxe.bg/",
+      "https://istra-luxe.bg/services",
+      "https://istra-luxe.bg/contacts",
+      "https://istra-luxe.bg/projects/hotel-palms-beach-kiten",
+      "https://istra-luxe.bg/projects/ironcode-varna",
+      "https://istra-luxe.bg/products/aluminium-railings/aluminievi-parapeti-sys-struni",
+    ]);
+  });
+});
+
+describe("noTextMessage", () => {
+  it("explains an empty crawl instead of calling it ready", () => {
+    expect(noTextMessage(0)).toMatch(/Couldn't open any page/);
+    expect(noTextMessage(12)).toMatch(/Read 12 pages but found no text/);
   });
 });

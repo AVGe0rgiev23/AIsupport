@@ -6,6 +6,7 @@ import { DefaultChatTransport } from "ai";
 import { stripCitationMarkers } from "@/lib/chat/citations";
 import { readableOn } from "@/app/_ui/color";
 import { IconChat, IconCheck, IconHandoff, IconSend } from "@/app/_ui/icons";
+import { COPY, pickLang, type WidgetCopy } from "./copy";
 
 interface Props {
   widgetToken: string;
@@ -143,6 +144,9 @@ export function ChatWidget({ widgetToken, orgName, primaryColor, greeting, posit
   const brandStyle: BrandStyle = { "--brand": primaryColor, "--on-brand": readableOn(primaryColor) };
   const last = messages[messages.length - 1];
   const waitingForReply = status === "submitted" || (status === "streaming" && last?.role !== "assistant");
+  const latestVisitorText =
+    [...messages].reverse().find((m) => m.role === "user")?.parts.find((p) => p.type === "text")?.text ?? null;
+  const t = COPY[pickLang(latestVisitorText, greeting, typeof navigator === "undefined" ? "" : navigator.language)];
 
   return (
     <div style={brandStyle} className="flex h-dvh flex-col bg-white font-sans text-slate-800 antialiased">
@@ -153,7 +157,7 @@ export function ChatWidget({ widgetToken, orgName, primaryColor, greeting, posit
         </span>
         <div className="min-w-0">
           <p className="truncate text-[15px] font-semibold leading-tight">{orgName}</p>
-          <p className="text-xs opacity-80">AI assistant · replies instantly</p>
+          <p className="text-xs opacity-80">{t.subtitle}</p>
         </div>
       </header>
 
@@ -184,7 +188,7 @@ export function ChatWidget({ widgetToken, orgName, primaryColor, greeting, posit
           );
         })}
         {waitingForReply && (
-          <div className="flex justify-start" aria-label="Assistant is typing">
+          <div className="flex justify-start" aria-label={t.typing}>
             <span className="flex gap-1.5 rounded-2xl rounded-bl-md bg-white px-4 py-3.5 shadow-sm ring-1 ring-slate-200">
               <span className="night-dot size-1.5 rounded-full bg-slate-400" />
               <span className="night-dot size-1.5 rounded-full bg-slate-400 [animation-delay:.15s]" />
@@ -200,6 +204,7 @@ export function ChatWidget({ widgetToken, orgName, primaryColor, greeting, posit
           conversationIdRef={conversationIdRef}
           reason={escalateReason}
           onClose={closeLeadCapture}
+          t={t}
         />
       ) : (
         // status has four values ("submitted" | "streaming" | "ready" | "error");
@@ -214,7 +219,7 @@ export function ChatWidget({ widgetToken, orgName, primaryColor, greeting, posit
         // before LeadCapture had any way to close) — that's exactly why
         // closeLeadCapture() above must clear the error, or this input would
         // render permanently disabled with no way to recover it.
-        <ChatInput onSend={(text) => sendMessage({ text })} disabled={status !== "ready"} />
+        <ChatInput onSend={(text) => sendMessage({ text })} disabled={status !== "ready"} t={t} />
       )}
 
       <p className="bg-white pb-2 text-center text-[10px] text-slate-400">Powered by SupportAI</p>
@@ -238,7 +243,7 @@ function Bubble({ from, children }: { from: "user" | "assistant"; children: stri
   );
 }
 
-function ChatInput({ onSend, disabled }: { onSend: (text: string) => void; disabled: boolean }) {
+function ChatInput({ onSend, disabled, t }: { onSend: (text: string) => void; disabled: boolean; t: WidgetCopy }) {
   const [value, setValue] = useState("");
   return (
     <form
@@ -251,7 +256,7 @@ function ChatInput({ onSend, disabled }: { onSend: (text: string) => void; disab
       }}
     >
       <label htmlFor="supportai-message" className="sr-only">
-        Your question
+        {t.question}
       </label>
       <input
         id="supportai-message"
@@ -260,13 +265,13 @@ function ChatInput({ onSend, disabled }: { onSend: (text: string) => void; disab
         disabled={disabled}
         maxLength={MAX_MESSAGE_LENGTH}
         onChange={(e) => setValue(e.target.value)}
-        placeholder="Ask a question…"
+        placeholder={t.placeholder}
         autoComplete="off"
       />
       <button
         type="submit"
         disabled={disabled || !value.trim()}
-        aria-label="Send"
+        aria-label={t.send}
         className="grid size-10 shrink-0 place-items-center rounded-full bg-(--brand) text-(--on-brand) transition hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--brand) disabled:opacity-40"
       >
         <IconSend className="size-[18px]" strokeWidth={2.25} />
@@ -275,19 +280,12 @@ function ChatInput({ onSend, disabled }: { onSend: (text: string) => void; disab
   );
 }
 
-const REASON_COPY: Record<string, string> = {
-  model_requested: "This one needs a person. Leave your email and our team will follow up.",
-  user_requested: "Leave your email and a person from our team will follow up.",
-  quota: "Our assistant is very busy right now. Leave your email and we'll get back to you.",
-  provider_exhausted: "Our assistant is very busy right now. Leave your email and we'll get back to you.",
-  error: "Something went wrong on our side. Leave your email and a person will follow up.",
-};
-
 function LeadCapture({
   widgetToken,
   conversationIdRef,
   reason,
   onClose,
+  t,
 }: {
   widgetToken: string;
   // Passed as the ref object itself (not dereferenced) so the parent's JSX
@@ -297,6 +295,7 @@ function LeadCapture({
   conversationIdRef: React.RefObject<string | null>;
   reason: string;
   onClose: () => void;
+  t: WidgetCopy;
 }) {
   const [email, setEmail] = useState("");
   const [note, setNote] = useState("");
@@ -335,7 +334,7 @@ function LeadCapture({
     }
     if (!ok) {
       setSending(false);
-      setError("Something went wrong. Please try again.");
+      setError(t.tryAgain);
       return;
     }
     // Deliberately does NOT call onClose() here. onClose() flips the
@@ -357,9 +356,9 @@ function LeadCapture({
             <IconCheck className="size-4" strokeWidth={2.75} />
           </span>
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-emerald-900">Thanks, you&apos;re all set</p>
+            <p className="text-sm font-semibold text-emerald-900">{t.thanks}</p>
             <p className="mt-0.5 break-words text-[13px] text-emerald-800">
-              A person from our team will follow up at {email}.
+              {t.followUp(email)}
             </p>
           </div>
         </div>
@@ -368,7 +367,7 @@ function LeadCapture({
           onClick={onClose}
           className="mt-3 h-10 w-full rounded-full border border-slate-200 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
         >
-          Back to chat
+          {t.backToChat}
         </button>
       </div>
     );
@@ -381,12 +380,12 @@ function LeadCapture({
           <IconHandoff className="size-4" />
         </span>
         <div>
-          <p className="text-sm font-semibold text-slate-900">Talk to a person</p>
-          <p className="text-[13px] leading-snug text-slate-500">{REASON_COPY[reason] ?? REASON_COPY.user_requested}</p>
+          <p className="text-sm font-semibold text-slate-900">{t.talkToPerson}</p>
+          <p className="text-[13px] leading-snug text-slate-500">{t.reasons[reason] ?? t.reasons.user_requested}</p>
         </div>
       </div>
       <label htmlFor="supportai-email" className="sr-only">
-        Email
+        {t.email}
       </label>
       <input
         id="supportai-email"
@@ -399,12 +398,12 @@ function LeadCapture({
         className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-[14px] placeholder:text-slate-400 focus:border-(--brand) focus:bg-white focus:outline-none"
       />
       <label htmlFor="supportai-note" className="sr-only">
-        Note
+        {t.note}
       </label>
       <textarea
         id="supportai-note"
         rows={2}
-        placeholder="Anything else to add? (optional)"
+        placeholder={t.notePlaceholder}
         value={note}
         onChange={(e) => setNote(e.target.value)}
         className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-[14px] placeholder:text-slate-400 focus:border-(--brand) focus:bg-white focus:outline-none"
@@ -416,14 +415,14 @@ function LeadCapture({
           disabled={sending}
           className="h-10 flex-1 rounded-full bg-(--brand) text-sm font-semibold text-(--on-brand) transition hover:brightness-110 disabled:opacity-60"
         >
-          {sending ? "Sending…" : "Send"}
+          {sending ? t.sending : t.send}
         </button>
         <button
           type="button"
           onClick={onClose}
           className="h-10 rounded-full px-4 text-sm font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
         >
-          No thanks, keep chatting
+          {t.keepChatting}
         </button>
       </div>
     </form>

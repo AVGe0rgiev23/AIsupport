@@ -9,7 +9,7 @@ import { z } from "zod";
 // "input-available") and shows LeadCapture.
 export const escalateToHumanTool = tool({
   description:
-    "Escalate this conversation to a human when you cannot answer confidently from the knowledge base, the visitor explicitly asks for a human, or the topic is billing/legal/account-specific.",
+    "Hand this conversation to a person. Only when the visitor asks for a person, when the documents don't contain what they need and they want it anyway (a quote, a booking, their specific case), or when it's about their own account, invoices, refunds or a legal matter. Don't use it for questions the documents answer, even partly.",
   inputSchema: z.object({
     reason: z.string().describe("Short reason a human should take over"),
   }),

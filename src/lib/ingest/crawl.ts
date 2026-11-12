@@ -21,6 +21,33 @@ export function parseSitemap(xml: string): string[] {
     .filter(Boolean);
 }
 
+/**
+ * Sitemap order is arbitrary, and only the first maxPages URLs get crawled.
+ * Put the pages a visitor asks about first: the home page and top-level pages
+ * (services, contacts, about) before deep ones like /projects/some-building.
+ * Stable, so pages at the same depth keep the sitemap's order.
+ */
+export function prioritizeUrls(urls: string[]): string[] {
+  const depth = (u: string) => {
+    try {
+      return new URL(u).pathname.split("/").filter(Boolean).length;
+    } catch {
+      return Number.MAX_SAFE_INTEGER;
+    }
+  };
+  return urls
+    .map((url, i) => ({ url, i, d: depth(url) }))
+    .sort((a, b) => a.d - b.d || a.i - b.i)
+    .map((x) => x.url);
+}
+
+/** Why a crawl found nothing to index, in words the business owner can act on. */
+export function noTextMessage(pagesRead: number): string {
+  return pagesRead === 0
+    ? "Couldn't open any page of this website. Check the address, then press Retry."
+    : `Read ${pagesRead} page${pagesRead === 1 ? "" : "s"} but found no text to learn from. The site may build its pages with JavaScript; upload its content as a document instead.`;
+}
+
 export function extractLinks(html: string, baseUrl: string): string[] {
   const $ = cheerio.load(html);
   const origin = new URL(baseUrl).origin;
