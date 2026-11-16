@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { streamWithFallback } from "@/lib/ai/streamWithFallback";
+import { CHAT_PROVIDER_OPTIONS, streamWithFallback } from "@/lib/ai/streamWithFallback";
 
 function fakeStream(parts: unknown[]) {
   return {
@@ -199,5 +199,26 @@ describe("streamWithFallback", () => {
     });
     expect(res.ok).toBe(true);
     if (res.ok) expect(res.providerName).toBe("google");
+  });
+});
+
+describe("chat speed", () => {
+  it("asks Gemini for minimal thinking, so a reply starts in seconds", async () => {
+    type Opts = Parameters<typeof streamWithFallback>[0];
+    let seen: typeof CHAT_PROVIDER_OPTIONS | undefined;
+    const streamTextFn = (args: { providerOptions?: typeof CHAT_PROVIDER_OPTIONS }) => {
+      seen = args.providerOptions;
+      return fakeStream([START, { type: "text-delta", text: "здравейте" }]);
+    };
+    await streamWithFallback({
+      primary: { name: "google", model: { tag: "google" } as unknown as Opts["primary"]["model"] },
+      fallback: { name: "groq", model: { tag: "groq" } as unknown as Opts["fallback"]["model"] },
+      system: "sys",
+      messages: [],
+      tools: {},
+      streamTextFn: streamTextFn as unknown as Opts["streamTextFn"],
+    });
+    expect(seen).toEqual(CHAT_PROVIDER_OPTIONS);
+    expect(seen?.google.thinkingConfig.thinkingLevel).toBe("minimal");
   });
 });

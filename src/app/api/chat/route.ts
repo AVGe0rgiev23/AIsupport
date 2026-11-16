@@ -144,7 +144,10 @@ export async function POST(req: Request) {
     // many documents an anonymous flood can create even if every downstream
     // chat completion fails (onFinish, and therefore its incrementUsage, never
     // runs in that case).
+    // Where a slow reply spends its time, in Vercel's logs ("chat timing").
+    const t0 = Date.now();
     const vector = await embedQuery(message);
+    const embedMs = Date.now() - t0;
     await incrementUsage(db, orgId, EMBEDDING_PROVIDER, 0);
 
     if (!conversationId) {
@@ -169,10 +172,12 @@ export async function POST(req: Request) {
       createdAt: new Date(),
     });
 
-    const chunks = await searchChunks(db, orgId, vector, 8);
-    const history = await orgDb
-      .find("messages", { conversationId }, { sort: { createdAt: 1 } })
-      .toArray();
+    const t1 = Date.now();
+    const [chunks, history] = await Promise.all([
+      searchChunks(db, orgId, vector, 8),
+      orgDb.find("messages", { conversationId }, { sort: { createdAt: 1 } }).toArray(),
+    ]);
+    const searchMs = Date.now() - t1;
 
     const primaryName: ProviderName =
       (org.aiConfig.provider as ProviderName | null) ?? env().LLM_PROVIDER;
@@ -220,6 +225,15 @@ export async function POST(req: Request) {
           });
         }
       },
+    });
+
+    console.log("chat timing", {
+      embedMs,
+      searchMs,
+      firstWordMs: Date.now() - t1 - searchMs, // the model's time to its first word
+      totalBeforeFirstWordMs: Date.now() - t0,
+      provider: streamResult.ok ? streamResult.providerName : "none",
+      chunks: chunks.length,
     });
 
     if (!streamResult.ok) {
