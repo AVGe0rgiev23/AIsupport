@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   contentHash,
+  decodeCfEmail,
   extractLinks,
   extractMainContent,
   noTextMessage,
@@ -127,5 +128,23 @@ describe("noTextMessage says why nothing could be read", () => {
   it("gives the HTTP status or the network error otherwise", () => {
     expect(noTextMessage(0, [{ url: "u", status: 404 }])).toMatch(/HTTP 404/);
     expect(noTextMessage(0, [{ url: "u", error: "getaddrinfo ENOTFOUND" }])).toMatch(/ENOTFOUND/);
+  });
+});
+
+describe("Cloudflare-protected email addresses", () => {
+  // Encodes like Cloudflare does: a key byte, then each character XOR'd with it
+  const encode = (email: string, key = 0x30) =>
+    [key, ...[...email].map((c) => c.charCodeAt(0) ^ key)].map((b) => b.toString(16).padStart(2, "0")).join("");
+
+  it("decodes data-cfemail back to the address", () => {
+    expect(decodeCfEmail(encode("sofia@istra-luxe.bg"))).toBe("sofia@istra-luxe.bg");
+    expect(decodeCfEmail("zz")).toBeNull();
+  });
+
+  it("puts real addresses into the extracted text instead of [email protected]", () => {
+    const html = `<main><p>Офис София</p><p><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="${encode("sofia@istra-luxe.bg")}">[email&#160;protected]</a></p></main>`;
+    const { text } = extractMainContent(html);
+    expect(text).toContain("sofia@istra-luxe.bg");
+    expect(text).not.toContain("protected");
   });
 });

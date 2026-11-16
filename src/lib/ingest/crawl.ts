@@ -101,9 +101,26 @@ export function extractLinks(html: string, baseUrl: string): string[] {
 
 const NOISE_SELECTORS = "script, style, noscript, nav, header, footer, aside, form, iframe, svg";
 
+/** Cloudflare's data-cfemail value: the first byte is a key, every following byte is XOR'd with it. */
+export function decodeCfEmail(hex: string): string | null {
+  if (!/^(?:[0-9a-f]{2}){2,}$/i.test(hex)) return null;
+  const key = parseInt(hex.slice(0, 2), 16);
+  let out = "";
+  for (let i = 2; i < hex.length; i += 2) out += String.fromCharCode(parseInt(hex.slice(i, i + 2), 16) ^ key);
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(out) ? out : null;
+}
+
 export function extractMainContent(html: string): { title: string | null; text: string } {
   const $ = cheerio.load(html);
   const title = $("title").first().text().trim() || $("h1").first().text().trim() || null;
+
+  // Cloudflare's email protection replaces every address with "[email protected]"
+  // and hides the real one in data-cfemail; put it back so the assistant can
+  // give visitors the address.
+  $("[data-cfemail]").each((_, el) => {
+    const email = decodeCfEmail($(el).attr("data-cfemail") ?? "");
+    if (email) $(el).text(email);
+  });
 
   const $root = $("main").length
     ? $("main").first()
