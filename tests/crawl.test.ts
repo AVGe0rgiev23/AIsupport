@@ -7,6 +7,7 @@ import {
   normalizeUrl,
   parseSitemap,
   prioritizeUrls,
+  sameSite,
 } from "@/lib/ingest/crawl";
 
 const page = `
@@ -100,5 +101,31 @@ describe("noTextMessage", () => {
   it("explains an empty crawl instead of calling it ready", () => {
     expect(noTextMessage(0)).toMatch(/Couldn't open any page/);
     expect(noTextMessage(12)).toMatch(/Read 12 pages but found no text/);
+  });
+});
+
+describe("www and non-www are one site", () => {
+  it("matches sitemap URLs and links across www., http and https", () => {
+    expect(sameSite("https://istra-luxe.bg/contacts", "https://www.istra-luxe.bg")).toBe(true);
+    expect(sameSite("http://www.istra-luxe.bg/", "https://istra-luxe.bg/services")).toBe(true);
+    expect(sameSite("https://evil.bg/istra-luxe.bg", "https://istra-luxe.bg")).toBe(false);
+    expect(sameSite("https://shop.istra-luxe.bg", "https://istra-luxe.bg")).toBe(false);
+  });
+
+  it("follows links to the bare domain from a www page", () => {
+    const html = '<a href="https://istra-luxe.bg/contacts">c</a><a href="https://other.bg/x">o</a>';
+    expect(extractLinks(html, "https://www.istra-luxe.bg/")).toEqual(["https://istra-luxe.bg/contacts"]);
+  });
+});
+
+describe("noTextMessage says why nothing could be read", () => {
+  it("names a Cloudflare block and how the owner can allow the crawler", () => {
+    const msg = noTextMessage(0, [{ url: "https://www.istra-luxe.bg", status: 403, cloudflare: true }]);
+    expect(msg).toMatch(/Cloudflare protection blocked/);
+    expect(msg).toMatch(/SupportAI-Crawler/);
+  });
+  it("gives the HTTP status or the network error otherwise", () => {
+    expect(noTextMessage(0, [{ url: "u", status: 404 }])).toMatch(/HTTP 404/);
+    expect(noTextMessage(0, [{ url: "u", error: "getaddrinfo ENOTFOUND" }])).toMatch(/ENOTFOUND/);
   });
 });

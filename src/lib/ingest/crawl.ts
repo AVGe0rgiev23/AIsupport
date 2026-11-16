@@ -41,23 +41,54 @@ export function prioritizeUrls(urls: string[]): string[] {
     .map((x) => x.url);
 }
 
+/** The site a URL belongs to: its hostname without "www." (www.acme.bg and acme.bg are one site). */
+export function siteOf(url: string): string | null {
+  try {
+    return new URL(url).hostname.toLowerCase().replace(/^www\./, "");
+  } catch {
+    return null;
+  }
+}
+
+/** Sitemaps and links often use the other form (www or not, http or https) than the address entered. */
+export function sameSite(a: string, b: string): boolean {
+  const sa = siteOf(a);
+  return sa !== null && sa === siteOf(b);
+}
+
+/** Why a page couldn't be read: the HTTP status (and whether Cloudflare answered), or a network error. */
+export interface FetchFailure {
+  url: string;
+  status?: number;
+  cloudflare?: boolean;
+  error?: string;
+}
+
 /** Why a crawl found nothing to index, in words the business owner can act on. */
-export function noTextMessage(pagesRead: number): string {
-  return pagesRead === 0
-    ? "Couldn't open any page of this website. Check the address, then press Retry."
-    : `Read ${pagesRead} page${pagesRead === 1 ? "" : "s"} but found no text to learn from. The site may build its pages with JavaScript; upload its content as a document instead.`;
+export function noTextMessage(pagesRead: number, failures: FetchFailure[] = []): string {
+  if (pagesRead > 0) {
+    return `Read ${pagesRead} page${pagesRead === 1 ? "" : "s"} but found no text to learn from. The site may build its pages with JavaScript; upload its content as a document instead.`;
+  }
+  const blocked = failures.find((f) => f.cloudflare && (f.status === 403 || f.status === 429 || f.status === 503));
+  if (blocked) {
+    return `The website's Cloudflare protection blocked SupportAI's crawler (HTTP ${blocked.status}). The site owner can allow it in Cloudflare (Security → WAF: a rule that skips requests whose user agent contains "SupportAI-Crawler"), then press Retry. Or upload the site's content as a document instead.`;
+  }
+  const status = failures.find((f) => f.status)?.status;
+  if (status) return `Couldn't open any page of this website: it answered with HTTP ${status}. Check the address, then press Retry.`;
+  const error = failures.find((f) => f.error)?.error;
+  if (error) return `Couldn't reach this website (${error}). Check the address, then press Retry.`;
+  return "Couldn't open any page of this website. Check the address, then press Retry.";
 }
 
 export function extractLinks(html: string, baseUrl: string): string[] {
   const $ = cheerio.load(html);
-  const origin = new URL(baseUrl).origin;
   const out: string[] = [];
   $("a[href]").each((_, el) => {
     const href = $(el).attr("href");
     if (!href) return;
     try {
       const abs = new URL(href, baseUrl);
-      if (abs.origin !== origin) return;
+      if (!sameSite(abs.toString(), baseUrl)) return;
       if (abs.protocol !== "http:" && abs.protocol !== "https:") return;
       const normalized = normalizeUrl(abs.toString());
       if (!out.includes(normalized)) out.push(normalized);

@@ -9,10 +9,12 @@ import {
   contentHash,
   extractLinks,
   extractMainContent,
+  type FetchFailure,
   noTextMessage,
   normalizeUrl,
   parseSitemap,
   prioritizeUrls,
+  sameSite,
 } from "@/lib/ingest/crawl";
 import { ingestion } from "./queues";
 
@@ -22,17 +24,29 @@ const POLITENESS_MS = 500;
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-async function fetchPage(url: string): Promise<string | null> {
+// Identifies itself honestly, so a site owner can allow it by name, and asks
+// for HTML in Bulgarian or English like a browser would.
+const CRAWLER_HEADERS = {
+  "User-Agent": "Mozilla/5.0 (compatible; SupportAI-Crawler/0.2; +https://supportai-beta.vercel.app)",
+  Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+  "Accept-Language": "bg,en;q=0.8",
+};
+
+/** The page's HTML, or null; why it failed is pushed onto `failures`. */
+async function fetchPage(url: string, failures: FetchFailure[]): Promise<string | null> {
   try {
-    const res = await fetch(url, {
-      headers: { "User-Agent": "SupportAI-Crawler/0.1" },
-      signal: AbortSignal.timeout(15_000),
-    });
-    if (!res.ok) return null;
+    const res = await fetch(url, { headers: CRAWLER_HEADERS, signal: AbortSignal.timeout(15_000) });
+    if (!res.ok) {
+      const cloudflare = (res.headers.get("server") ?? "").toLowerCase().includes("cloudflare") || res.headers.has("cf-ray");
+      failures.push({ url, status: res.status, cloudflare });
+      logger.warn("page not readable", { url, status: res.status, cloudflare });
+      return null;
+    }
     const type = res.headers.get("content-type") ?? "";
     if (!type.includes("html") && !type.includes("xml")) return null;
     return await res.text();
   } catch (err) {
+    failures.push({ url, error: err instanceof Error ? err.message : String(err) });
     logger.warn("fetch failed", { url, err: String(err) });
     return null;
   }
@@ -70,16 +84,11 @@ export const crawlWebsite = schemaTask({
     metadata.set("phase", "discovering");
     const origin = new URL(rootUrl).origin;
     let queue: { url: string; depth: number }[];
-    const sitemapXml = await fetchPage(`${origin}/sitemap.xml`);
-    const sitemapUrls = sitemapXml
-      ? parseSitemap(sitemapXml).filter((u) => {
-          try {
-            return new URL(u).origin === origin;
-          } catch {
-            return false;
-          }
-        })
-      : [];
+    const failures: FetchFailure[] = [];
+    const sitemapXml = await fetchPage(`${origin}/sitemap.xml`, []); // a missing sitemap is normal
+    // Same site even when the sitemap uses the other form (www.istra-luxe.bg
+    // entered, sitemap lists istra-luxe.bg): that used to drop every URL.
+    const sitemapUrls = sitemapXml ? parseSitemap(sitemapXml).filter((u) => sameSite(u, rootUrl)) : [];
     if (sitemapUrls.length > 0) {
       // Main pages first: a sitemap can list 100+ URLs (istra-luxe.bg has 125,
       // mostly project pages with no text), and only maxPages get read.
@@ -103,7 +112,7 @@ export const crawlWebsite = schemaTask({
       if (visited.has(url)) continue;
       visited.add(url);
 
-      const html = await fetchPage(url);
+      const html = await fetchPage(url, failures);
       await sleep(POLITENESS_MS);
       if (html === null) continue;
       crawled++;
@@ -170,7 +179,7 @@ export const crawlWebsite = schemaTask({
       { _id: sourceId },
       chunkCount > 0
         ? { $set: { status: "ready", lastSyncedAt: new Date(), chunkCount, errorMessage: null } }
-        : { $set: { status: "error", lastSyncedAt: new Date(), chunkCount, errorMessage: noTextMessage(crawled) } },
+        : { $set: { status: "error", lastSyncedAt: new Date(), chunkCount, errorMessage: noTextMessage(crawled, failures) } },
     );
     return { crawled, changed: changedPages.length, unchanged, chunkCount };
   },
