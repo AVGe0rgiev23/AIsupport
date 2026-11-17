@@ -22,7 +22,7 @@ describe("chatModel", () => {
   it("returns the Groq model when asked", async () => {
     const { chatModel } = await import("@/lib/ai/provider");
     const model = chatModel("groq") as unknown as { modelId: string };
-    expect(model.modelId).toBe("llama-3.3-70b-versatile");
+    expect(model.modelId).toBe("openai/gpt-oss-120b");
   });
 });
 

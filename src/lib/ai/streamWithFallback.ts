@@ -33,11 +33,13 @@ export interface StreamWithFallbackOpts {
 /**
  * Gemini 3.x "thinks" before it writes unless told otherwise, which kept a
  * visitor waiting ~20s for a short answer from the site's own text. A
- * support reply grounded in retrieved passages doesn't need it. Only the
- * `google` key is read by the Google provider; Groq ignores it.
+ * support reply grounded in retrieved passages doesn't need it. The same for
+ * the Groq fallback (gpt-oss reasons first too). Each provider reads only its
+ * own key.
  */
 export const CHAT_PROVIDER_OPTIONS = {
   google: { thinkingConfig: { thinkingLevel: "minimal" as const } },
+  groq: { reasoningEffort: "low" as const },
 };
 
 export type StreamWithFallbackResult =

@@ -7,7 +7,10 @@ export type ProviderName = "google" | "groq";
 
 export const CHAT_MODELS: Record<ProviderName, string> = {
   google: "gemini-3.5-flash",
-  groq: "llama-3.3-70b-versatile",
+  // llama-3.3-70b-versatile became Enterprise-only on Groq (404 "model does
+  // not exist" for this account), so the fallback failed whenever Gemini was
+  // busy. gpt-oss-120b is a Groq production model with tool calling.
+  groq: "openai/gpt-oss-120b",
 };
 
 export function chatModel(
