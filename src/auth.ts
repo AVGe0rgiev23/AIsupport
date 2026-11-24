@@ -4,7 +4,11 @@ import { MongoDBAdapter } from "@auth/mongodb-adapter";
 import { getClientPromise } from "@/lib/db/client";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: MongoDBAdapter(getClientPromise(), { databaseName: "supportai" }),
+  // The function, not its result: the adapter calls it on every request. A
+  // promise taken once at startup kept a failed connect forever, so after a
+  // 40-second Atlas outage every sign-in on that warm instance failed at once
+  // (getClientPromise drops a failed connect and retries; the adapter didn't).
+  adapter: MongoDBAdapter(getClientPromise, { databaseName: "supportai" }),
   providers: [
     Resend({
       apiKey: process.env.RESEND_API_KEY,
