@@ -2,7 +2,6 @@ import { MongoClient, type Db } from "mongodb";
 
 declare global {
   // Reuse one client across Next.js hot reloads / route invocations
-  // eslint-disable-next-line no-var
   var _mongoClientPromise: Promise<MongoClient> | undefined;
 }
 

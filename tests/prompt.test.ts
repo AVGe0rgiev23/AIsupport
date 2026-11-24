@@ -132,4 +132,16 @@ describe("buildSystemPrompt", () => {
     expect(p).toMatch(/prices, hours or locations are NOT billing/);
     expect(p).toMatch(/Never invent facts/);
   });
+
+  // In the chaykadental.com test the model wrote "a colleague will contact
+  // you" and never called the tool, so the visitor got no email form.
+  it("tells the model to call the tool, not to announce a hand-off in words", () => {
+    const p = buildSystemPrompt("friendly");
+    expect(p).not.toMatch(/first write one short sentence/);
+    expect(p).toMatch(/never say a colleague will contact them without calling escalate_to_human/i);
+  });
+
+  it("asks for plain text, because the widget shows no markdown", () => {
+    expect(buildSystemPrompt("friendly")).toMatch(/plain text/);
+  });
 });

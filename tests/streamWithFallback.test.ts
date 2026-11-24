@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- the fakes below stand in for the AI SDK's model and streamText types */
 import { describe, expect, it } from "vitest";
 import { CHAT_PROVIDER_OPTIONS, streamWithFallback } from "@/lib/ai/streamWithFallback";
 

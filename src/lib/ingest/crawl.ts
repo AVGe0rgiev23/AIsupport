@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import * as cheerio from "cheerio";
+import type { AnyNode, Element, Text } from "domhandler";
 
 export function contentHash(text: string): string {
   return createHash("sha256").update(text, "utf8").digest("hex");
@@ -36,9 +37,52 @@ export function prioritizeUrls(urls: string[]): string[] {
     }
   };
   return urls
-    .map((url, i) => ({ url, i, d: depth(url) }))
-    .sort((a, b) => a.d - b.d || a.i - b.i)
+    .map((url, i) => ({ url, i, d: depth(url), info: isInfoPage(url) ? 0 : 1 }))
+    .sort((a, b) => a.d - b.d || a.info - b.info || a.i - b.i)
     .map((x) => x.url);
+}
+
+// Pages that answer what visitors ask: FAQ, contacts, prices, about, delivery,
+// payment, services, terms. In URLs written in Latin letters (chesto-zadavani-
+// vprosi, kontakti, tsenorazpis) and in Cyrillic ones.
+const INFO_PAGE =
+  /faq|chesto|v[au]?prosi|question|kontakt|contact|tsen|ceni|cenorazpis|cenova|price|pricing|za-nas|about|dostavka|delivery|shipping|plashtane|payment|uslugi|services|rabotno|hours|garanc|warranty|usloviya|terms|kak-da|въпрос|контакт|цени|ценоразпис|за-нас|доставка|плащане|услуги|работно|гаранц|условия/i;
+
+export function isInfoPage(url: string): boolean {
+  try {
+    return INFO_PAGE.test(decodeURIComponent(new URL(url).pathname));
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Info pages first, otherwise in the order found. Following links on a shop
+ * (toniks.net) read 50 product pages and never reached the FAQ linked from
+ * the home page.
+ */
+export function infoPagesFirst(urls: string[]): string[] {
+  return [...urls.filter(isInfoPage), ...urls.filter((u) => !isInfoPage(u))];
+}
+
+/**
+ * When a section was entered (chaykadental.com/bg), crawl only that section:
+ * a sitemap lists every language, and the other one used up the page limit.
+ * The home page means the whole site; a path nothing sits under (a single
+ * page was entered) also falls back to the whole list rather than to nothing.
+ */
+export function scopeToRoot(urls: string[], rootUrl: string): string[] {
+  const prefix = new URL(rootUrl).pathname.replace(/\/+$/, "");
+  if (!prefix) return urls;
+  const inScope = urls.filter((u) => {
+    try {
+      const path = new URL(u).pathname.replace(/\/+$/, "");
+      return path === prefix || path.startsWith(`${prefix}/`);
+    } catch {
+      return false;
+    }
+  });
+  return inScope.length > 1 ? inScope : urls;
 }
 
 /** The site a URL belongs to: its hostname without "www." (www.acme.bg and acme.bg are one site). */
@@ -80,6 +124,19 @@ export function noTextMessage(pagesRead: number, failures: FetchFailure[] = []):
   return "Couldn't open any page of this website. Check the address, then press Retry.";
 }
 
+// Links that do something (add to cart, log in) or download a file rather than
+// show a page. On toniks.net they were 9 of the 50 pages read, and a request
+// to an add-to-cart link can change the shop's state.
+const ACTION_PATH =
+  /(?:^|\/)(?:cart|basket|kolichka|checkout|order|orders|poruchka|login|logout|signin|sign-in|register|registration|my-account|account|password|wishlist|compare|cdn-cgi)(?:\/|$|\.)/i;
+const ACTION_QUERY = /(?:^|[?&])(?:add|add-to-cart|add_to_cart|action|token|logout|remove|delete)=/i;
+const ACTION_CONTROLLER = /(?:^|[?&])controller=(?:cart|order|order-opc|authentication|my-account|password|history|addresses|identity|wishlist)(?:&|$)/i;
+const FILE = /\.(?:pdf|jpe?g|png|gif|webp|svg|zip|rar|7z|docx?|xlsx?|pptx?|mp4|mp3|avi)$/i;
+
+function isActionOrFile(url: URL): boolean {
+  return ACTION_PATH.test(url.pathname) || ACTION_QUERY.test(url.search) || ACTION_CONTROLLER.test(url.search) || FILE.test(url.pathname);
+}
+
 export function extractLinks(html: string, baseUrl: string): string[] {
   const $ = cheerio.load(html);
   const out: string[] = [];
@@ -90,6 +147,7 @@ export function extractLinks(html: string, baseUrl: string): string[] {
       const abs = new URL(href, baseUrl);
       if (!sameSite(abs.toString(), baseUrl)) return;
       if (abs.protocol !== "http:" && abs.protocol !== "https:") return;
+      if (isActionOrFile(abs)) return;
       const normalized = normalizeUrl(abs.toString());
       if (!out.includes(normalized)) out.push(normalized);
     } catch {
@@ -131,18 +189,75 @@ export function extractMainContent(html: string): { title: string | null; text: 
         : $("body");
   $root.find(NOISE_SELECTORS).remove();
 
+  const lines = blockLines($root.get(0)?.children ?? []);
+  return { title, text: lines.join("\n\n") };
+}
+
+/*
+  Block elements start a new line; everything else (span, a, strong, …) runs
+  inline. Reading only p/li/td/h* used to drop whole pages built with page
+  builders, where every row is divs and spans: chaykadental.com's price list
+  came out as its section headings with not one price under them.
+*/
+const BLOCK_TAGS = new Set([
+  "address", "article", "aside", "blockquote", "caption", "dd", "details", "div", "dl", "dt",
+  "fieldset", "figcaption", "figure", "footer", "form", "h1", "h2", "h3", "h4", "h5", "h6",
+  "header", "hr", "li", "main", "nav", "ol", "p", "pre", "section", "summary", "table",
+  "tbody", "tfoot", "thead", "tr", "ul",
+]);
+
+/**
+ * Each block's own text becomes one line, in document order; headings become
+ * markdown ("## …"). Two inline elements side by side get a space between them
+ * (`<span>Пломба</span><span>65€</span>` → "Пломба 65€"), but text running into
+ * an element doesn't ("формата</a>." stays "формата."). A table row is one line
+ * with its cells joined by " | ", so a price stays next to its service.
+ */
+function blockLines(nodes: AnyNode[]): string[] {
   const lines: string[] = [];
-  $root.find("h1, h2, h3, h4, h5, h6, p, li, td, pre, blockquote").each((_, el) => {
-    const tag = el.tagName.toLowerCase();
-    const t = $(el).text().replace(/\s+/g, " ").trim();
-    if (!t) return;
-    if (tag.startsWith("h")) {
-      lines.push(`${"#".repeat(Number(tag[1]))} ${t}`);
-    } else {
-      lines.push(t);
+  let buf = "";
+
+  const flush = (heading?: string) => {
+    const t = buf.replace(/\s+/g, " ").trim();
+    buf = "";
+    if (t) lines.push(heading ? `${"#".repeat(Number(heading[1]))} ${t}` : t);
+  };
+
+  const walk = (children: AnyNode[], inRow: boolean) => {
+    let prevWasElement = false;
+    let cells = 0;
+    for (const node of children) {
+      if (node.type === "text") {
+        buf += (node as Text).data;
+        prevWasElement = false;
+        continue;
+      }
+      if (node.type !== "tag") continue; // comments, directives; script/style are already removed
+      const el = node as Element;
+      const tag = el.tagName.toLowerCase();
+
+      if (tag === "br") {
+        buf += " ";
+      } else if (tag === "td" || tag === "th") {
+        if (cells++ > 0) buf += " | ";
+        walk(el.children, true);
+      } else if (tag === "tr") {
+        flush();
+        walk(el.children, true);
+        flush();
+      } else if (BLOCK_TAGS.has(tag) && !inRow) {
+        flush();
+        walk(el.children, false);
+        flush(/^h[1-6]$/.test(tag) ? tag : undefined);
+      } else {
+        if (prevWasElement) buf += " ";
+        walk(el.children, inRow);
+      }
+      prevWasElement = true;
     }
-  });
-  // Fallback for pages with no structural elements at all
-  const text = lines.length ? lines.join("\n\n") : $root.text().replace(/\s+/g, " ").trim();
-  return { title, text };
+  };
+
+  walk(nodes, false);
+  flush();
+  return lines;
 }

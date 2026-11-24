@@ -99,7 +99,8 @@ export async function createCrawlSourceAction(
   } catch {
     return { error: "Enter a valid http(s) URL" };
   }
-  const maxPages = Math.min(Math.max(Number(formData.get("maxPages")) || 25, 1), 50);
+  // 50 by default: at 25, chaykadental.com/bg lost its НЗОК page to the limit.
+  const maxPages = Math.min(Math.max(Number(formData.get("maxPages")) || 50, 1), 50);
   const scheduleRaw = String(formData.get("schedule") ?? "none");
   const crawlSchedule = scheduleRaw === "daily" || scheduleRaw === "weekly" ? scheduleRaw : null;
 

@@ -10,11 +10,14 @@ import {
   extractLinks,
   extractMainContent,
   type FetchFailure,
+  infoPagesFirst,
+  isInfoPage,
   noTextMessage,
   normalizeUrl,
   parseSitemap,
   prioritizeUrls,
   sameSite,
+  scopeToRoot,
 } from "@/lib/ingest/crawl";
 import { ingestion } from "./queues";
 
@@ -88,12 +91,18 @@ export const crawlWebsite = schemaTask({
     const sitemapXml = await fetchPage(`${origin}/sitemap.xml`, []); // a missing sitemap is normal
     // Same site even when the sitemap uses the other form (www.istra-luxe.bg
     // entered, sitemap lists istra-luxe.bg): that used to drop every URL.
-    const sitemapUrls = sitemapXml ? parseSitemap(sitemapXml).filter((u) => sameSite(u, rootUrl)) : [];
+    // And only the section that was entered (chaykadental.com/bg, not /en).
+    const sitemapUrls = sitemapXml
+      ? scopeToRoot(parseSitemap(sitemapXml).filter((u) => sameSite(u, rootUrl)), rootUrl)
+      : [];
     if (sitemapUrls.length > 0) {
       // Main pages first: a sitemap can list 100+ URLs (istra-luxe.bg has 125,
-      // mostly project pages with no text), and only maxPages get read.
+      // mostly project pages with no text), and only maxPages get read. More
+      // than maxPages are queued because sitemaps list dead pages too
+      // (istra-luxe.bg: 38 of its first 50 answer 404), and the loop below
+      // stops at maxPages pages actually read.
       queue = prioritizeUrls(sitemapUrls)
-        .slice(0, maxPages)
+        .slice(0, maxPages * 3)
         .map((u) => ({ url: normalizeUrl(u), depth: 0 }));
     } else {
       queue = [{ url: rootUrl, depth: 0 }];
@@ -132,9 +141,13 @@ export const crawlWebsite = schemaTask({
       }
 
       if (sitemapUrls.length === 0 && depth < maxDepth) {
-        for (const link of extractLinks(html, url)) {
+        // FAQ, contacts and prices before product pages (see infoPagesFirst),
+        // across the whole queue: toniks.net's FAQ answers sit one click below
+        // a listing page, behind every product link found on the way there.
+        for (const link of infoPagesFirst(extractLinks(html, url))) {
           if (!visited.has(link)) queue.push({ url: link, depth: depth + 1 });
         }
+        queue = [...queue.filter((q) => isInfoPage(q.url)), ...queue.filter((q) => !isInfoPage(q.url))];
         metadata.set("discovered", visited.size + queue.length);
       }
     }

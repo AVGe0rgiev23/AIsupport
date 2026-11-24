@@ -26,7 +26,7 @@ export interface StreamWithFallbackOpts {
     tools: ToolSet;
     maxRetries: number;
     providerOptions?: typeof CHAT_PROVIDER_OPTIONS;
-    onFinish?: (event: any) => void | Promise<void>;
+    onFinish?: (event: FinishEvent) => void | Promise<void>;
   }) => ChatStreamResult;
 }
 
@@ -98,7 +98,7 @@ export async function streamWithFallback(
       maxRetries,
       providerOptions: CHAT_PROVIDER_OPTIONS,
       onFinish: opts.onFinish
-        ? (event: any) => {
+        ? (event: FinishEvent) => {
             if (guard.committed) {
               return opts.onFinish!(event, named.name);
             }

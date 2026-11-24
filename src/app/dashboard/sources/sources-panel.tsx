@@ -358,7 +358,7 @@ export function SourcesPanel({
                       type="number"
                       min={1}
                       max={50}
-                      defaultValue={25}
+                      defaultValue={50}
                       className={inputStyles}
                     />
                   </Field>

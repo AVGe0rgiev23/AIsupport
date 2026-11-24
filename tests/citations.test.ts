@@ -1,6 +1,6 @@
 import { ObjectId } from "mongodb";
 import { describe, expect, it } from "vitest";
-import { parseCitations, stripCitationMarkers } from "@/lib/chat/citations";
+import { parseCitations, stripCitationMarkers, stripMarkdown } from "@/lib/chat/citations";
 import type { ScoredChunk } from "@/lib/db/vectorSearch";
 
 function chunk(i: number): ScoredChunk {
@@ -41,6 +41,16 @@ describe("parseCitations", () => {
   it("returns [] for text with no citations", () => {
     expect(parseCitations("No citations here.", [chunk(0)])).toEqual([]);
   });
+
+  // Gemini groups sources: "[1, 3]" (seen in the chaykadental.com test).
+  it("reads grouped markers like [1, 3]", () => {
+    const chunks = [chunk(0), chunk(1), chunk(2)];
+    expect(parseCitations("Цената зависи [1, 3]. Вижте [2,3].", chunks)).toEqual([
+      { chunkId: chunks[0]._id, documentId: chunks[0].documentId },
+      { chunkId: chunks[2]._id, documentId: chunks[2].documentId },
+      { chunkId: chunks[1]._id, documentId: chunks[1].documentId },
+    ]);
+  });
 });
 
 // The system prompt mandates inline [n] markers and parseCitations consumes
@@ -71,5 +81,40 @@ describe("stripCitationMarkers", () => {
 
   it("preserves newlines", () => {
     expect(stripCitationMarkers("line one [1]\nline two [2]")).toBe("line one\nline two");
+  });
+
+  it("removes grouped markers like [1, 3] and [1,2,5]", () => {
+    expect(stripCitationMarkers("Цената зависи от материала [1, 3].")).toBe("Цената зависи от материала.");
+    expect(stripCitationMarkers("Вижте [1,2,5] и [4]")).toBe("Вижте и");
+  });
+
+  it("strips a partially streamed grouped marker", () => {
+    expect(stripCitationMarkers("Цената зависи [1, 2")).toBe("Цената зависи");
+    expect(stripCitationMarkers("Цената зависи [1,")).toBe("Цената зависи");
+  });
+
+  it("leaves ordinary bracketed text alone", () => {
+    expect(stripCitationMarkers("Работим [понеделник - петък].")).toBe("Работим [понеделник - петък].");
+  });
+});
+
+// The widget shows text only (no markdown rendering, on purpose), so the
+// model's markdown reached visitors as literal "**+359 888 310 106**".
+describe("stripMarkdown", () => {
+  it("removes bold and italic markers", () => {
+    expect(stripMarkdown("Обадете се на **+359 888 310 106**.")).toBe("Обадете се на +359 888 310 106.");
+    expect(stripMarkdown("__важно__ и *малко*")).toBe("важно и малко");
+  });
+
+  it("turns markdown bullets into plain bullets and drops heading marks", () => {
+    expect(stripMarkdown("* Почистване\n- Пломби\n### Цени")).toBe("• Почистване\n• Пломби\nЦени");
+  });
+
+  it("strips a half-streamed bold marker at the end", () => {
+    expect(stripMarkdown("Телефон: **+359")).toBe("Телефон: +359");
+  });
+
+  it("leaves arithmetic and lone asterisks alone", () => {
+    expect(stripMarkdown("2 * 3 = 6")).toBe("2 * 3 = 6");
   });
 });

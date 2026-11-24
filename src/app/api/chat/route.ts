@@ -12,6 +12,7 @@ import { buildSystemPrompt, formatChunks, recentHistory } from "@/lib/chat/promp
 import { parseCitations } from "@/lib/chat/citations";
 import { consumeRateLimit, rateLimitBucket } from "@/lib/chat/rateLimit";
 import { authorizeWidgetRequest, MAX_VISITOR_TEXT_LENGTH } from "@/lib/chat/widgetRequest";
+import { wantsHuman } from "@/lib/chat/wantsHuman";
 import { withOrg } from "@/lib/db/withOrg";
 import { env } from "@/lib/env";
 
@@ -171,6 +172,12 @@ export async function POST(req: Request) {
       usage: null,
       createdAt: new Date(),
     });
+
+    // A plain "I want to talk to a person" opens the email form every time,
+    // instead of hoping the model calls escalate_to_human (see wantsHuman).
+    if (wantsHuman(message)) {
+      return escalationStream(conversationId, "user_requested");
+    }
 
     const t1 = Date.now();
     const [chunks, history] = await Promise.all([

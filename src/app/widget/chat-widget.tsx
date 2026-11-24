@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import { stripCitationMarkers } from "@/lib/chat/citations";
+import { stripCitationMarkers, stripMarkdown } from "@/lib/chat/citations";
 import { readableOn } from "@/app/_ui/color";
 import { IconChat, IconCheck, IconHandoff, IconSend } from "@/app/_ui/icons";
 import { COPY, pickLang, type WidgetCopy } from "./copy";
@@ -175,8 +175,10 @@ export function ChatWidget({ widgetToken, orgName, primaryColor, greeting, posit
           // zero markdown/HTML/image rendering is why prompt-injected
           // content pulled out of a crawled third-party page has no
           // exfiltration beacon to reach for.
+          // stripMarkdown is the same kind of render-boundary transform, for
+          // the "**…**" the model writes despite the prompt.
           const text = m.parts
-            .map((p) => (p.type === "text" ? stripCitationMarkers(p.text) : ""))
+            .map((p) => (p.type === "text" ? stripMarkdown(stripCitationMarkers(p.text)) : ""))
             .join("");
           // A turn can be a tool call with no text at all (escalate_to_human):
           // render nothing rather than an empty bubble.

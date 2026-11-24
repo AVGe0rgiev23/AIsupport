@@ -26,7 +26,7 @@ describe("mintWidgetToken / verifyWidgetToken", () => {
   it("rejects a tampered payload", async () => {
     const { mintWidgetToken, verifyWidgetToken } = await import("@/lib/widgetToken");
     const token = mintWidgetToken(new ObjectId(), "https://acme.com");
-    const [body, sig] = token.split(".");
+    const [, sig] = token.split(".");
     const tamperedBody = Buffer.from(
       JSON.stringify({ orgId: "000000000000000000000000", verifiedOrigin: "https://evil.com", exp: Date.now() + 999_999 }),
     ).toString("base64url");

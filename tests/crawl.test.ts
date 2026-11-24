@@ -4,11 +4,13 @@ import {
   decodeCfEmail,
   extractLinks,
   extractMainContent,
+  infoPagesFirst,
   noTextMessage,
   normalizeUrl,
   parseSitemap,
   prioritizeUrls,
   sameSite,
+  scopeToRoot,
 } from "@/lib/ingest/crawl";
 
 const page = `
@@ -40,6 +42,71 @@ describe("extractMainContent", () => {
     const { text } = extractMainContent("<html><body><p>bare page</p></body></html>");
     expect(text).toBe("bare page");
   });
+
+  // chaykadental.com (SP Page Builder): every price row is divs and spans, and
+  // the name and price are adjacent spans with no space between them.
+  it("reads price rows built from divs and spans, with a space between name and price", () => {
+    const html = `<main><h3>Прегледи</h3>
+      <div class="sppb-addon-pricelist"><div class="pricelist-text-content"><div class="sppb-addon-title">
+        <span class="pricelist-title-content"><span class="pricelist-title">Цялостен преглед на устна кухина</span><span class="pricelist-price-content"><span class="pricelist-price">20€<span class="pricelist-point-zero"></span></span> </span></span>
+      </div><div class="sppb-addon-content"><p></p></div></div></div>
+      <div class="sppb-addon-pricelist"><div class="pricelist-text-content"><div class="sppb-addon-title"><span class="pricelist-title">Контактна анестезия</span><span class="pricelist-price">15€</span></div></div></div>
+    </main>`;
+    const { text } = extractMainContent(html);
+    expect(text).toContain("### Прегледи");
+    expect(text).toContain("Цялостен преглед на устна кухина 20€");
+    expect(text).toContain("Контактна анестезия 15€");
+  });
+
+  it("keeps text that sits directly in a div next to child blocks", () => {
+    const { text } = extractMainContent(`<main><div>Работим всеки ден<div><p>Без почивни дни</p></div>след 9:00</div></main>`);
+    expect(text.split("\n\n")).toEqual(["Работим всеки ден", "Без почивни дни", "след 9:00"]);
+  });
+
+  it("keeps a list item's own text when it has a nested list", () => {
+    const { text } = extractMainContent(`<main><ul><li>Услуги<ul><li>Почистване</li></ul></li></ul></main>`);
+    expect(text).toContain("Услуги");
+    expect(text).toContain("Почистване");
+  });
+
+  it("puts a table row on one line so a price stays next to its service", () => {
+    const { text } = extractMainContent(
+      `<main><table><tr><th>Услуга</th><th>Цена</th></tr><tr><td>Пломба</td><td>65 €</td></tr></table></main>`,
+    );
+    expect(text).toContain("Пломба | 65 €");
+  });
+
+  it("does not split punctuation off inline links", () => {
+    const { text } = extractMainContent(`<main><p>Пишете ни на <a href="/k">формата</a>.</p></main>`);
+    expect(text).toBe("Пишете ни на формата.");
+  });
+});
+
+describe("scopeToRoot", () => {
+  const urls = [
+    "https://chaykadental.com/bg",
+    "https://chaykadental.com/en",
+    "https://chaykadental.com/bg/tsenorazpis",
+    "https://chaykadental.com/en/prices",
+    "https://chaykadental.com/bgx",
+  ];
+
+  // chaykadental.com/bg was entered, and the English home page used one of
+  // the crawl's 25 pages.
+  it("keeps only pages under the path that was entered", () => {
+    expect(scopeToRoot(urls, "https://chaykadental.com/bg")).toEqual([
+      "https://chaykadental.com/bg",
+      "https://chaykadental.com/bg/tsenorazpis",
+    ]);
+  });
+
+  it("keeps everything when the home page was entered", () => {
+    expect(scopeToRoot(urls, "https://chaykadental.com")).toEqual(urls);
+  });
+
+  it("keeps everything rather than nothing when no page is under the path", () => {
+    expect(scopeToRoot(urls, "https://chaykadental.com/kontakti")).toEqual(urls);
+  });
 });
 
 describe("parseSitemap", () => {
@@ -58,6 +125,48 @@ describe("extractLinks", () => {
     expect(extractLinks(html, "https://a.com/start")).toEqual([
       "https://a.com/docs",
       "https://a.com/faq",
+    ]);
+  });
+
+  // toniks.net (PrestaShop): 9 of the 50 crawled pages were cart and account
+  // links, and requesting an add-to-cart link can change the shop's state.
+  it("skips cart, account and other action links, and files", () => {
+    const html = [
+      `<a href="/cart?add=1&id_product=163&token=cd46">buy</a>`,
+      `<a href="/my-account">a</a>`,
+      `<a href="/login?back=my-account">l</a>`,
+      `<a href="/index.php?controller=order">o</a>`,
+      `<a href="/wishlist">w</a>`,
+      `<a href="/katalog.pdf">pdf</a>`,
+      `<a href="/43-chesto-zadavani-vprosi">faq</a>`,
+      `<a href="/kuhni/131-kukhnya-krasi.html">kitchen</a>`,
+    ].join("");
+    expect(extractLinks(html, "https://toniks.net/")).toEqual([
+      "https://toniks.net/43-chesto-zadavani-vprosi",
+      "https://toniks.net/kuhni/131-kukhnya-krasi.html",
+    ]);
+  });
+});
+
+describe("infoPagesFirst", () => {
+  it("moves FAQ, contact, price and about pages ahead of the rest, keeping order otherwise", () => {
+    const urls = [
+      "https://toniks.net/kuhni/131-kukhnya-krasi.html",
+      "https://toniks.net/43-chesto-zadavani-vprosi",
+      "https://toniks.net/30-proekti",
+      "https://toniks.net/content/9-kontakti",
+      "https://chaykadental.com/bg/tsenorazpis",
+      "https://example.bg/za-nas",
+      "https://example.bg/%D0%BA%D0%BE%D0%BD%D1%82%D0%B0%D0%BA%D1%82%D0%B8",
+    ];
+    expect(infoPagesFirst(urls)).toEqual([
+      "https://toniks.net/43-chesto-zadavani-vprosi",
+      "https://toniks.net/content/9-kontakti",
+      "https://chaykadental.com/bg/tsenorazpis",
+      "https://example.bg/za-nas",
+      "https://example.bg/%D0%BA%D0%BE%D0%BD%D1%82%D0%B0%D0%BA%D1%82%D0%B8",
+      "https://toniks.net/kuhni/131-kukhnya-krasi.html",
+      "https://toniks.net/30-proekti",
     ]);
   });
 });
